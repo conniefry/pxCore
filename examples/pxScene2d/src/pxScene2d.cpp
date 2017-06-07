@@ -40,6 +40,9 @@
 #include "pxText.h"
 #include "pxTextBox.h"
 #include "pxImage.h"
+#ifdef PX_SERVICE_MANAGER
+#include "pxServiceManager.h"
+#endif
 #include "pxImage9.h"
 #include "pxImageA.h"
 
@@ -383,10 +386,10 @@ pxObject::~pxObject()
     pxObjectCount--;
     rtValue nullValue;
     mReady.send("reject",nullValue);
-    deleteSnapshot(mSnapshotRef);
-    deleteSnapshot(mClipSnapshotRef);
-    deleteSnapshot(mDrawableSnapshotForMask);
-    deleteSnapshot(mMaskSnapshot);
+    clearSnapshot(mSnapshotRef);
+    clearSnapshot(mClipSnapshotRef);
+    clearSnapshot(mDrawableSnapshotForMask);
+    clearSnapshot(mMaskSnapshot);
     mSnapshotRef = NULL;
     mClipSnapshotRef = NULL;
     mDrawableSnapshotForMask = NULL;
@@ -414,37 +417,40 @@ void pxObject::createNewPromise()
 
 void pxObject::dispose()
 {
-  //rtLogInfo(__FUNCTION__);
-  mIsDisposed = true;
-  vector<animation>::iterator it = mAnimations.begin();
-  for(;it != mAnimations.end();it++)
+  if (!mIsDisposed)
   {
-    if ((*it).promise)
-      (*it).promise.send("reject",this);
-  }
+    //rtLogInfo(__FUNCTION__);
+    mIsDisposed = true;
+    vector<animation>::iterator it = mAnimations.begin();
+    for(;it != mAnimations.end();it++)
+    {
+      if ((*it).promise)
+        (*it).promise.send("reject",this);
+    }
 
-  rtValue nullValue;
-  mReady.send("reject",nullValue);
+    rtValue nullValue;
+    mReady.send("reject",nullValue);
 
-  mAnimations.clear();
-  mEmit->clearListeners();
-  for(vector<rtRef<pxObject> >::iterator it = mChildren.begin(); it != mChildren.end(); ++it)
-  {
-    (*it)->dispose();
-    (*it)->mParent = NULL;  // setParent mutates the mChildren collection
-  }
-  mChildren.clear();
-  deleteSnapshot(mSnapshotRef);
-  deleteSnapshot(mClipSnapshotRef);
-  deleteSnapshot(mDrawableSnapshotForMask);
-  deleteSnapshot(mMaskSnapshot);
-  mSnapshotRef = NULL;
-  mClipSnapshotRef = NULL;
-  mDrawableSnapshotForMask = NULL;
-  mMaskSnapshot = NULL;
+    mAnimations.clear();
+    mEmit->clearListeners();
+    for(vector<rtRef<pxObject> >::iterator it = mChildren.begin(); it != mChildren.end(); ++it)
+    {
+      (*it)->dispose();
+      (*it)->mParent = NULL;  // setParent mutates the mChildren collection
+    }
+    mChildren.clear();
+    clearSnapshot(mSnapshotRef);
+    clearSnapshot(mClipSnapshotRef);
+    clearSnapshot(mDrawableSnapshotForMask);
+    clearSnapshot(mMaskSnapshot);
+    mSnapshotRef = NULL;
+    mClipSnapshotRef = NULL;
+    mDrawableSnapshotForMask = NULL;
+    mMaskSnapshot = NULL;
 #ifdef ENABLE_RT_NODE
-  script.pump();
+    script.pump();
 #endif
+ }
 }
 
 /** since this is a boolean, we have to handle if someone sets it to
@@ -588,6 +594,10 @@ rtError pxObject::remove()
 
 rtError pxObject::removeAll()
 {
+  for(vector<rtRef<pxObject> >::iterator it = mChildren.begin(); it != mChildren.end(); ++it)
+  {
+    (*it)->mParent = NULL;
+  }
   mChildren.clear();
   repaint();
   repaintParents();
@@ -1242,7 +1252,7 @@ rtError pxObject::setPainting(bool v)
   }
   else
   {
-    deleteSnapshot(mSnapshotRef);
+    clearSnapshot(mSnapshotRef);
   }
   return RT_OK;
 }
@@ -1270,7 +1280,7 @@ void pxObject::createSnapshot(pxContextFramebufferRef& fbo, bool separateContext
   //rtLogInfo("createSnapshot  w=%f h=%f\n", w, h);
   if (fbo.getPtr() == NULL || fbo->width() != floor(w) || fbo->height() != floor(h))
   {
-    deleteSnapshot(fbo);
+    clearSnapshot(fbo);
     //rtLogInfo("createFramebuffer  mw=%f mh=%f\n", w, h);
     fbo = context.createFramebuffer(floor(w), floor(h), antiAliasing);
   }
@@ -1366,7 +1376,7 @@ void pxObject::createSnapshotOfChildren()
   context.setFramebuffer(previousRenderSurface);
 }
 
-void pxObject::deleteSnapshot(pxContextFramebufferRef fbo)
+void pxObject::clearSnapshot(pxContextFramebufferRef fbo)
 {
   if (fbo.getPtr() != NULL)
   {
@@ -1472,7 +1482,7 @@ rtDefineObject(pxRoot,pxObject);
 int gTag = 0;
 
 pxScene2d::pxScene2d(bool top)
-  : start(0), sigma_draw(0), sigma_update(0), frameCount(0), mContainer(NULL), mShowDirtyRectangle(false), mTestView(NULL)
+  : start(0), sigma_draw(0), sigma_update(0), frameCount(0), mContainer(NULL), mShowDirtyRectangle(false), mSceneContainers(), mTestView(NULL), mDisposed(false)
 {
   mRoot = new pxRoot(this);
   mFocusObj = mRoot;
@@ -1519,8 +1529,20 @@ pxScene2d::pxScene2d(bool top)
 
 rtError pxScene2d::dispose()
 {
+    mDisposed = true;
     rtObjectRef e = new rtMapObject;
     mEmit.send("onClose", e);
+
+    for (unsigned int i=0; i<mSceneContainers.size(); i++)
+    {
+      pxSceneContainer* temp = mSceneContainers[i];
+      if ((NULL != temp) && (NULL == temp->parent()))
+      {
+        temp->dispose();
+      }
+    }
+    mSceneContainers.clear();
+
     if (mRoot)
       mRoot->dispose();
     mEmit->clearListeners();
@@ -1565,6 +1587,10 @@ rtError pxScene2d::create(rtObjectRef p, rtObjectRef& o)
     e = createTextBox(p,o);
   else if (!strcmp("image",t.cString()))
     e = createImage(p,o);
+#ifdef PX_SERVICE_MANAGER
+  else if (!strcmp("serviceManager",t.cString()))
+    e = createServiceManager(p,o);
+#endif
   else if (!strcmp("image9",t.cString()))
     e = createImage9(p,o);
   else if (!strcmp("imageA",t.cString()))
@@ -1646,6 +1672,14 @@ rtError pxScene2d::createImage(rtObjectRef p, rtObjectRef& o)
   return RT_OK;
 }
 
+#ifdef PX_SERVICE_MANAGER
+rtError pxScene2d::createServiceManager(rtObjectRef p, rtObjectRef& o)
+{
+  pxServiceManager::findServiceManager(o);  
+  return RT_OK;
+}
+#endif
+
 rtError pxScene2d::createImage9(rtObjectRef p, rtObjectRef& o)
 {
   o = new pxImage9(this);
@@ -1693,6 +1727,7 @@ rtError pxScene2d::createScene(rtObjectRef p, rtObjectRef& o)
   o = new pxSceneContainer(this);
   o.set(p);
   o.send("init");
+  mSceneContainers.push_back((pxSceneContainer*)o.getPtr());
   return RT_OK;
 }
 
@@ -2676,6 +2711,24 @@ void pxScene2d::invalidateRect(pxRect* r)
   }
 }
 
+void pxScene2d::sceneContainerDisposed(pxSceneContainerRef ref)
+{
+  // this is to make sure, we are not clearing the scene containers vector, while it is under process from scene dispose
+  if (!mDisposed)
+  {
+    unsigned int pos = 0;
+    for (; pos<mSceneContainers.size(); pos++)
+    {
+      if (mSceneContainers[pos] == ref)
+        break;
+    }
+    if (pos != mSceneContainers.size())
+    {
+      mSceneContainers.erase(mSceneContainers.begin()+pos);
+    }
+  }
+}
+
 rtDefineObject(pxViewContainer, pxObject);
 rtDefineProperty(pxViewContainer, w);
 rtDefineProperty(pxViewContainer, h);
@@ -2749,6 +2802,22 @@ rtError pxSceneContainer::setScriptView(pxScriptView* scriptView)
   setView(scriptView);
   return RT_OK;
 }
+
+void pxSceneContainer::dispose()
+{
+  if (!mIsDisposed)
+  {
+    rtLogInfo(__FUNCTION__);
+    //Adding ref to make sure, object not destroyed from event listeners
+    AddRef();
+    mScene->sceneContainerDisposed(this);
+    setScriptView(NULL);
+    pxObject::dispose();
+    Release();
+  }
+}
+
+
 #if 0
 void* gObjectFactoryContext = NULL;
 objectFactory gObjectFactory = NULL;
