@@ -1,4 +1,5 @@
 #!/bin/sh
+sudo rm -rf /tmp/cache/*
 export VALGRINDLOGS=$TRAVIS_BUILD_DIR/logs/valgrind_logs
 export ENABLE_VALGRIND=1
 export PX_DUMP_MEMUSAGE=1
@@ -8,7 +9,7 @@ VALGRINDPXCORELOGS=$TRAVIS_BUILD_DIR/logs/valgrind_pxcore_logs
 touch $VALGRINDLOGS
 #run valgrind and monitor for completion
 cd $TRAVIS_BUILD_DIR/examples/pxScene2d/src
-./pxscene.sh testRunner_memcheck.js > $VALGRINDPXCORELOGS &
+./pxscene.sh testRunner_memcheck.js?tests=file://$TRAVIS_BUILD_DIR/tests/pxScene2d/testRunner/tests.json > $VALGRINDPXCORELOGS &
 grep "RUN COMPLETED" $VALGRINDPXCORELOGS
 retVal=$?
 count=0
@@ -18,6 +19,11 @@ grep "RUN COMPLETED" $VALGRINDPXCORELOGS
 retVal=$?
 count=$((count+30))
 echo "Valgrind execution going on for $count seconds";
+if [ "$retVal" -ne 0 ]
+then
+ls -lrt core
+retVal=$?
+fi
 done
 
 #kill pxscene either after js terminates or no response for 5 minutes
@@ -40,6 +46,7 @@ fi
 exit 1;
 fi
 
+$TRAVIS_BUILD_DIR/ci/check_dump_cores.sh `pwd` pxscene $VALGRINDPXCORELOGS
 chmod 444 $VALGRINDLOGS
 #check for memory leak
 grep "definitely lost: 0 bytes in 0 blocks" $VALGRINDLOGS
