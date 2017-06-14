@@ -118,18 +118,27 @@ public:
     }
 
     mState = FULFILLED;
-    mObject = v.toObject().getPtr();
-
-    for (std::vector<thenData>::iterator it = mThenData.begin();
-         it != mThenData.end(); ++it)
+    rtObjectRef objRef = v.toObject();
+    
+    if (objRef.getPtr() != NULL)
     {
-      if (it->mResolve)
+      mObject = objRef.getPtr();
+    }
+
+    if (mObject != NULL)
+    {
+      for (std::vector<thenData>::iterator it = mThenData.begin();
+          it != mThenData.end(); ++it)
       {
-        it->mResolve.send(mObject);
-        it->mNextPromise.send("resolve",mObject);
+        if (it->mResolve)
+        {
+          it->mResolve.send(mObject);
+          it->mNextPromise.send("resolve",mObject);
+        }
       }
     }
     mThenData.clear();
+    mObject = objRef.getPtr();
     return RT_OK;
   }
 
