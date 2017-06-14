@@ -10,7 +10,7 @@ LEAKPXCORELOGS=$TRAVIS_BUILD_DIR/logs/leak_pxcore_logs
 rm /var/tmp/pxscene.log
 cd $TRAVIS_BUILD_DIR/examples/pxScene2d/src/pxscene.app/Contents/MacOS
 ./pxscene.sh https://px-apps.sys.comcast.net/pxscene-samples/examples/px-reference/test-run/testRunner.js?tests=file://$TRAVIS_BUILD_DIR/tests/pxScene2d/testRunner/tests.json &
-grep "RTEST RESULTS" /var/tmp/pxscene.log
+grep "TEST RESULTS" /var/tmp/pxscene.log
 retVal=$?
 count=0
 leakcount=0
@@ -28,7 +28,7 @@ kill -15 `ps -ef | grep -v grep|grep pxscene|grep  -v pxscene.sh|awk '{print $2}
 #wait for few seconds to get the application terminate completely
 leakcount=`leaks pxscene|grep Leak|wc -l`
 echo "leakcount during termination $leakcount"
-sleep 5s;
+sleep 20s;
 pkill -9 -f pxscene.sh
 cp /var/tmp/pxscene.log $LEAKPXCORELOGS
 
