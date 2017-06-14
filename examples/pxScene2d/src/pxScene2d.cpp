@@ -2889,7 +2889,7 @@ void pxScriptView::runScript()
 #endif // ifndef RUNINMAIN
 
   #ifdef ENABLE_RT_NODE
-  rtLogWarn("pxScriptView::pxScriptView is just now creating a context for mUrl=%s\n",mUrl.cString());
+  rtLogDebug("pxScriptView::pxScriptView is just now creating a context for mUrl=%s\n",mUrl.cString());
   mCtx = script.createContext();
 
   if (mCtx)
