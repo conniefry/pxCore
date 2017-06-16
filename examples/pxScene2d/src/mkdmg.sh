@@ -163,26 +163,11 @@ createDMG() {
   #copy installation script to staging directory
   cp ${DMG_RES_DIR}/engine_install ${SRC_FOLDER}/.engine_install
 
-  #remove .DS_Store and other "." files if they exists
+  #remove .DS_Store if it exists
   if [ -f "${SRC_FOLDER}/.DS_Store" ]; then
     rm "${SRC_FOLDER}/.DS_Store"
   fi
-  if [ -f "${SRC_FOLDER}/.background" ]; then
-    rm "${SRC_FOLDER}/.background"
-  fi
-  if [ -f "${SRC_FOLDER}/.fseventsd" ]; then
-    rm "${SRC_FOLDER}/.fseventsd"
-  fi
-  if [ -f "${SRC_FOLDER}/.Trashes" ]; then
-    rm "${SRC_FOLDER}/.Trashes"
-  fi
-  if [ -f "${SRC_FOLDER}/.engine_install" ]; then
-    rm "${SRC_FOLDER}/.engine_install"
-  fi
-  if [ -f "${SRC_FOLDER}/.VolumeIcons.icns" ]; then
-    rm "${SRC_FOLDER}/.VolumeIcons.icns"
-  fi
-  
+
   # Create the temporary template image
   test -f "${DMG_TEMP_NAME}" && rm -f "${DMG_TEMP_NAME}"
   ACTUAL_SIZE=`du -sm "${SRC_FOLDER}" | cut -f1`
