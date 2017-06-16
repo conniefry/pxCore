@@ -22,7 +22,7 @@ done
 
 kill -15 `ps -ef | grep pxscene |grep -v grep|grep -v pxscene.sh|awk '{print $2}'`
 echo "Sleeping to make terminate complete ......";
-sleep 5s;
+sleep 20s;
 pkill -9 -f pxscene.sh
 $TRAVIS_BUILD_DIR/ci/check_dump_cores.sh `pwd` pxscene $PXCHECKLOGS
 grep "pxobjectcount is \[0\]" $PXCHECKLOGS
