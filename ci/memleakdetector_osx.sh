@@ -30,7 +30,7 @@ sleep 20s;
 leakcount=`leaks pxscene|grep Leak|wc -l`
 echo "leakcount during termination $leakcount"
 count=20
-while [ "$leakcount" -ne 0 ] &&  [ "$count" -lt 120 ]; do
+while [ "$leakcount" -ne 0 ] &&  [ "$count" -lt 300 ]; do
 echo "waiting for shutdown to complete: $count seconds";
 sleep 20s;
 leakcount=`leaks pxscene|grep Leak|wc -l`
