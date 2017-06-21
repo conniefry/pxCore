@@ -20,7 +20,18 @@ done
 
 kill -15 `ps -ef | grep pxscene |grep -v grep|grep -v pxscene.sh|awk '{print $2}'`
 echo "Sleeping to make terminate complete ......";
-sleep 60s;
+sleep 20s;
+grep "texture memory usage" /var/tmp/pxscene.log
+retVal=$?
+count=20
+while [ "$retVal" -ne 0 ] &&  [ "$count" -lt 120 ]; do
+echo "waiting for shutdown to complete: $count seconds";
+sleep 20s;
+grep "texture memory usage" /var/tmp/pxscene.log
+retVal=$?
+count=$((count+20))
+
+done
 pkill -9 -f pxscene.sh
 cp /var/tmp/pxscene.log $PXCHECKLOGS
 grep "pxobjectcount is \[0\]" $PXCHECKLOGS

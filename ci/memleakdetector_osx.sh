@@ -26,9 +26,18 @@ done
 echo "`ps -ef | grep -v grep|grep pxscene|grep -v pxscene.sh|awk '{print $2}'`"
 kill -15 `ps -ef | grep -v grep|grep pxscene|grep  -v pxscene.sh|awk '{print $2}'`
 #wait for few seconds to get the application terminate completely
+sleep 20s;
 leakcount=`leaks pxscene|grep Leak|wc -l`
 echo "leakcount during termination $leakcount"
+count=20
+while [ "$leakcount" -ne 0 ] &&  [ "$count" -lt 120 ]; do
+echo "waiting for shutdown to complete: $count seconds";
 sleep 20s;
+leakcount=`leaks pxscene|grep Leak|wc -l`
+count=$((count+20))
+done
+
+#sleep 20s;
 pkill -9 -f pxscene.sh
 cp /var/tmp/pxscene.log $LEAKPXCORELOGS
 
