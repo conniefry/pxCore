@@ -199,7 +199,7 @@ createDMG() {
     SetFile -c icnC "${MOUNT_DIR}/.VolumeIcon.icns"
     printf "done.\n"
   fi
-
+  sleep 4
   # run applescript
   APPLESCRIPT=$(mktemp -t createdmg)
   printf "  Creating Applescript in ${APPLESCRIPT} for customizing DMG..."
