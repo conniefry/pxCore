@@ -139,7 +139,7 @@ createDMG() {
   ICON_SIZE=128	#DMG icon size
   TEXT_SIZE=16	#DMG text size
 
-  VOLUME_NAME=pxscene	#mounted DMG name
+  VOLUME_NAME="pxscene"	#mounted DMG name
   MOUNT_DIR="/Volumes/${VOLUME_NAME}"
   VOLUME_ICON_FILE=${DMG_RES_DIR}/pxscenevolico.icns	#DMG volume icon
   BACKGROUND_FILE=${DMG_RES_DIR}/background.png		#DMG background image
@@ -286,7 +286,7 @@ createDMG() {
   printf "  Running Applescript: /usr/bin/osascript ${APPLESCRIPT} on ${VOLUME_NAME}..."
   "/usr/bin/osascript" "${APPLESCRIPT}" "${VOLUME_NAME}" || true
   printf "done.\n"
-  sleep 10  # to wait for applescript to finish
+  sleep 4  # to wait for applescript to finish
 
   rm "${APPLESCRIPT}"
 
