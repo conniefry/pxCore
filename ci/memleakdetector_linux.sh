@@ -9,13 +9,13 @@ VALGRINDPXCORELOGS=$TRAVIS_BUILD_DIR/logs/valgrind_pxcore_logs
 touch $VALGRINDLOGS
 #run valgrind and monitor for completion
 cd $TRAVIS_BUILD_DIR/examples/pxScene2d/src
-./pxscene.sh testRunner_memcheck.js?tests=file://$TRAVIS_BUILD_DIR/tests/pxScene2d/testRunner/tests.json > $VALGRINDPXCORELOGS &
-grep "RUN COMPLETED" $VALGRINDPXCORELOGS
+./pxscene.sh https://px-apps.sys.comcast.net/pxscene-samples/examples/px-reference/test-run/testRunner.js?tests=file://$TRAVIS_BUILD_DIR/tests/pxScene2d/testRunner/tests.json > $VALGRINDPXCORELOGS &
+grep "TEST RESULTS" $VALGRINDPXCORELOGS
 retVal=$?
 count=0
 while [ "$retVal" -ne 0 ] &&  [ "$count" -lt 600 ]; do
 sleep 30;
-grep "RUN COMPLETED" $VALGRINDPXCORELOGS
+grep "TEST RESULTS" $VALGRINDPXCORELOGS
 retVal=$?
 count=$((count+30))
 echo "Valgrind execution going on for $count seconds";

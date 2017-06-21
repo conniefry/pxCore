@@ -9,14 +9,14 @@ LEAKPXCORELOGS=$TRAVIS_BUILD_DIR/logs/leak_pxcore_logs
 #run leak detector and monitor for completion
 rm /var/tmp/pxscene.log
 cd $TRAVIS_BUILD_DIR/examples/pxScene2d/src/pxscene.app/Contents/MacOS
-./pxscene.sh testRunner_memcheck.js?tests=file://$TRAVIS_BUILD_DIR/tests/pxScene2d/testRunner/tests.json &
-grep "RUN COMPLETED" /var/tmp/pxscene.log
+./pxscene.sh https://px-apps.sys.comcast.net/pxscene-samples/examples/px-reference/test-run/testRunner.js?tests=file://$TRAVIS_BUILD_DIR/tests/pxScene2d/testRunner/tests.json &
+grep "TEST RESULTS" /var/tmp/pxscene.log
 retVal=$?
 count=0
 leakcount=0
 while [ "$retVal" -ne 0 ] &&  [ "$count" -lt 540 ]; do
 leaks -nocontext pxscene > $LEAKLOGS
-grep "RUN COMPLETED" /var/tmp/pxscene.log
+grep "TEST RESULTS" /var/tmp/pxscene.log
 retVal=$?
 count=$((count+20))
 sleep 20;
@@ -26,9 +26,18 @@ done
 echo "`ps -ef | grep -v grep|grep pxscene|grep -v pxscene.sh|awk '{print $2}'`"
 kill -15 `ps -ef | grep -v grep|grep pxscene|grep  -v pxscene.sh|awk '{print $2}'`
 #wait for few seconds to get the application terminate completely
+sleep 20s;
 leakcount=`leaks pxscene|grep Leak|wc -l`
 echo "leakcount during termination $leakcount"
-sleep 5s;
+count=20
+while [ "$leakcount" -ne 0 ] &&  [ "$count" -lt 300 ]; do
+echo "waiting for shutdown to complete: $count seconds";
+sleep 20s;
+leakcount=`leaks pxscene|grep Leak|wc -l`
+count=$((count+20))
+done
+
+#sleep 20s;
 pkill -9 -f pxscene.sh
 cp /var/tmp/pxscene.log $LEAKPXCORELOGS
 

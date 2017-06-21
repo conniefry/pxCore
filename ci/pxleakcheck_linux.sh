@@ -4,13 +4,13 @@ export ENABLE_VALGRIND=0
 export RT_LOG_LEVEL=info
 PXCHECKLOGS=$TRAVIS_BUILD_DIR/logs/pxcheck_logs
 cd $TRAVIS_BUILD_DIR/examples/pxScene2d/src
-./pxscene.sh testRunner_memcheck.js?tests=file://$TRAVIS_BUILD_DIR/tests/pxScene2d/testRunner/tests.json > $PXCHECKLOGS 2>&1 &
-grep "RUN COMPLETED" $PXCHECKLOGS
+./pxscene.sh https://px-apps.sys.comcast.net/pxscene-samples/examples/px-reference/test-run/testRunner.js?tests=file://$TRAVIS_BUILD_DIR/tests/pxScene2d/testRunner/tests.json > $PXCHECKLOGS 2>&1 &
+grep "TEST RESULTS" $PXCHECKLOGS
 retVal=$?
 count=0
 while [ "$retVal" -ne 0 ] &&  [ "$count" -ne 5400 ]; do
 sleep 30;
-grep "RUN COMPLETED" $PXCHECKLOGS
+grep "TEST RESULTS" $PXCHECKLOGS
 retVal=$?
 count=$((count+30))
 if [ "$retVal" -ne 0 ]
@@ -22,7 +22,7 @@ done
 
 kill -15 `ps -ef | grep pxscene |grep -v grep|grep -v pxscene.sh|awk '{print $2}'`
 echo "Sleeping to make terminate complete ......";
-sleep 5s;
+sleep 20s;
 pkill -9 -f pxscene.sh
 $TRAVIS_BUILD_DIR/ci/check_dump_cores.sh `pwd` pxscene $PXCHECKLOGS
 grep "pxobjectcount is \[0\]" $PXCHECKLOGS

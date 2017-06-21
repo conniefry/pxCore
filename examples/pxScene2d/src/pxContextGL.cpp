@@ -507,7 +507,7 @@ void cleanupOffscreen(void* data);
 class pxTextureOffscreen : public pxTexture
 {
 public:
-  pxTextureOffscreen() : mOffscreen(), mInitialized(false),
+  pxTextureOffscreen() : mOffscreen(), mInitialized(false), mTextureName(0),
                          mTextureUploaded(false), mTextureDataAvailable(false),
                          mLoadTextureRequested(false), mWidth(0), mHeight(0), mOffscreenMutex(),
                          mFreeOffscreenDataRequested(false), mCompressedData(NULL), mCompressedDataSize(0)
@@ -517,7 +517,7 @@ public:
   }
 
   pxTextureOffscreen(pxOffscreen& o, const char *compressedData = NULL, size_t compressedDataSize = 0)
-                                     : mOffscreen(), mInitialized(false),
+                                     : mOffscreen(), mInitialized(false), mTextureName(0),
                                        mTextureUploaded(false), mTextureDataAvailable(false),
                                        mLoadTextureRequested(false), mWidth(0), mHeight(0), mOffscreenMutex(),
                                        mFreeOffscreenDataRequested(false), mCompressedData(NULL), mCompressedDataSize(0)
