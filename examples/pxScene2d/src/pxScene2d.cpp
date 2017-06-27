@@ -682,7 +682,7 @@ void pxObject::cancelAnimation(const char* prop, bool fastforward, bool rewind, 
       {
         if (a.ended)
           a.ended.send(this);
-        if (a.promise)
+        if (a.promise && a.promise.getPtr() != NULL)
         {
           a.promise.send(resolve ? "resolve" : "reject", this);
           
@@ -752,7 +752,7 @@ void pxObject::animateToInternal(const char* prop, double to, double duration,
   {
     if (a.ended)
       a.ended.send(this);
-    if (a.promise)
+    if (a.promise && a.promise.getPtr() != NULL)
       a.promise.send("resolve",this);
   }
 }
