@@ -175,7 +175,6 @@ createDMG() {
   printf "  Creating temporary template"
   hdiutil create -srcfolder "${SRC_FOLDER}" -volname "${VOLUME_NAME}" -fs HFS+ -fsargs "-c c=64,a=16,e=16" -format UDRW -size ${DISK_IMAGE_SIZE}m "${DMG_TEMP_NAME}"
   
-  sleep 4
 
   DEV_NAME=$(hdiutil info | egrep '^/dev/' | sed 1q | awk '{print $1}')
   test -d "${MOUNT_DIR}" && hdiutil detach "${DEV_NAME}"
@@ -206,11 +205,7 @@ createDMG() {
   APPLESCRIPT=$(mktemp -t createdmg)
   printf "  Creating Applescript in ${APPLESCRIPT} for customizing DMG..."
   printf 'on run (volumeName)
-	tell application "Finder"
-    get the name of every disk
-      copy result to stdout
-
-	end tell
+tell application "System Events" to get the name of every disk
   end run' | sed -e "s/WINX/${WINX}/g" -e "s/WINY/${WINY}/g" -e "s/WINW/${WINW}/g" -e "s/WINH/${WINH}/g" -e "s/BACKGROUND_CLAUSE/${BACKGROUND_CLAUSE}/g" -e "s/REPOSITION_HIDDEN_FILES_CLAUSE/${REPOSITION_HIDDEN_FILES_CLAUSE}/g" -e "s/ICON_SIZE/${ICON_SIZE}/g" -e "s/TEXT_SIZE/${TEXT_SIZE}/g" | perl -pe  "s/POSITION_CLAUSE/${POSITION_CLAUSE}/g" | perl -pe "s/APPLICATION_CLAUSE/${APPLICATION_CLAUSE}/g" | perl -pe "s/HIDING_CLAUSE/${HIDING_CLAUSE}/" >"${APPLESCRIPT}"
   printf "done.\n"
 
