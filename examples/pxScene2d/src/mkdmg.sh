@@ -174,6 +174,8 @@ createDMG() {
   DISK_IMAGE_SIZE=$(expr ${ACTUAL_SIZE} + 20)
   printf "  Creating temporary template"
   hdiutil create -srcfolder "${SRC_FOLDER}" -volname "${VOLUME_NAME}" -fs HFS+ -fsargs "-c c=64,a=16,e=16" -format UDRW -size ${DISK_IMAGE_SIZE}m "${DMG_TEMP_NAME}"
+  
+  sleep 4
 
   DEV_NAME=$(hdiutil info | egrep '^/dev/' | sed 1q | awk '{print $1}')
   test -d "${MOUNT_DIR}" && hdiutil detach "${DEV_NAME}"
