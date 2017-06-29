@@ -207,7 +207,7 @@ createDMG() {
   printf 'on run (volumeName)
 tell application "System Events"
 	get the name of every disk
-	open disk "pxscene"
+	open disk (volumeName as string)
 	tell application "Finder"
 		tell disk (volumeName as string)
 			open
@@ -227,7 +227,7 @@ tell application "System Events"
 				set statusbar visible to false
 				set the bounds to {theXOrigin, theYOrigin, theBottomRightX, theBottomRightY}
 				set statusbar visible to false
-				REPOSITION_HIDDEN_FILES_CLAUSE
+				set position of every item to {theBottomRightX + 100, 100}
 			end tell
 			
 			set opts to the icon view options of container window
