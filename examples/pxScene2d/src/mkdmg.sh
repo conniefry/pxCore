@@ -57,79 +57,6 @@ parseOptions() {
   done
 }
 
-function getNode()  {
-  # Get node 0.12.7 - a dependency for pxscene
-  printf "Getting node 0.12.7..."
-  cd /var/tmp
-  wget --no-check-certificate https://nodejs.org/dist/v0.12.7/node-v0.12.7-darwin-x64.tar.gz
-  gunzip node-v0.12.7-darwin-x64.tar.gz
-  tar xf node-v0.12.7-darwin-x64.tar
-  mv node-v0.12.7-darwin-x64 ${ABS}/examples/pxScene2d/external/.
-  cd ${ABS}/examples/pxScene2d/external
-  ln -s node-v0.12.7-darwin-x64 node
-  rm /var/tmp/node-v0.12.7-darwin-x64.tar
-  cd ../../..
-  printf "done.\n"
-}
-
-buildExternalLibraries() {
-  # build external libraries - jpg, ft, curl, etc
-  printf "Setting up external libraries:\n"
-  cd examples/pxScene2d/external
-  for i in jpg png curl ft ; do
-    TS=`date "+%Y-%m-%d %H:%M:%S"`
-    printf "${TS} > Starting ${i}...\n" &> ${LOG_PATH}/${i}.out
-    cd ${i}
-    printf "   Setting up ${i}, see ${LOG_PATH}/${i}.out for details.\n"
-    printf "\tConfiguring ${i}..."
-    ./configure &> ${LOG_PATH}/${i}.out
-    printf "done.\n"
-    printf "\tMaking ${i}..."
-    make clean >> ${LOG_PATH}/${i}.out 2>&1
-    make >> ${LOG_PATH}/${i}.out 2>&1
-    printf "done.\n"
-    TS=`date "+%Y-%m-%d %H:%M:%S"`
-    printf "${TS} > Finished ${i}.\n" >> ${LOG_PATH}/${i}.out 2>&1
-    cd ..
-  done
-  cd ../../..
-
-  # build glut
-  printf "   Setting up glut, see ${LOG_PATH}/glut.out for details.\n"
-  printf "\tMaking glut..."
-  make -f Makefile.glut clean &> ${LOG_PATH}/glut.out
-  make -f Makefile.glut >> ${LOG_PATH}/glut.out 2>&1
-  printf "done.\n"
-
-  cd examples/pxScene2d/src/jsbindings
-  printf "   Setting up with node-gyp, see ${LOG_PATH}/node-gyp.out for details.\n"
-  printf "\tConfiguring..."
-  node-gyp configure &> ${LOG_PATH}/node-gyp.out
-  printf "done.\n"
-  printf "\tBuilding..."
-  ./build.sh >> ${LOG_PATH}/node-gyp.out 2>&1
-  printf "done.\n"
-}
-
-copyBinaries() {
-  cd ${ABS}
-  # copy required binaries
-  printf "Creating directories for Binaries and examples..."
-  mkdir -p ${DEPLOY_PATH}/images
-  mkdir -p ${DEPLOY_PATH}/external
-  mkdir -p ${DEPLOY_PATH}/src/jsbindings/build/Debug
-  printf "done.\n"
-  printf "Copying files to package directory..."
-  cp -R ${BIN_SOURCE_PATH}/images/* ${DEPLOY_PATH}/images/.
-  cp -R ${BIN_SOURCE_PATH}/external/* ${DEPLOY_PATH}/external/.
-  cp ${BIN_SOURCE_PATH}/src/jsbindings/*.js ${DEPLOY_PATH}/src/jsbindings/.
-  cp ${BIN_SOURCE_PATH}/src/jsbindings/*.ttf ${DEPLOY_PATH}/src/jsbindings/.
-  cp ${BIN_SOURCE_PATH}/src/jsbindings/*.sh ${DEPLOY_PATH}/src/jsbindings/.
-  cp ${BIN_SOURCE_PATH}/src/jsbindings/build/Debug/px.node ${DEPLOY_PATH}/src/jsbindings/build/Debug/.
-  mv -f deploy/examples deploy/MacOSX/Pxscene/Pxscene.app/Contents/Resources/.
-  printf "done.\n"
-}
-
 createDMG() {
   DMG_RES_DIR=macstuff/dmgresources
   WINX=10	#opened DMG X position
@@ -145,10 +72,11 @@ createDMG() {
   BACKGROUND_FILE=${DMG_RES_DIR}/background.png		#DMG background image
   BACKGROUND_FILE_NAME="$(basename ${BACKGROUND_FILE})"
   #applescript clauses to set icon positions within the dmg
-  BACKGROUND_CLAUSE="set background picture of opts to file \".background:${BACKGROUND_FILE_NAME}\""
-  REPOSITION_HIDDEN_FILES_CLAUSE="set position of every item to {theBottomRightX + 100, 100}"
-  POSITION_CLAUSE="${POSITION_CLAUSE}set position of item \"pxscene.app\" to {240, 140}"
-  APPLICATION_CLAUSE="set position of item \"Applications\" to {240, 390}"
+  BACKGROUND_CLAUSE="set background picture of icon view options to file \".background:${BACKGROUND_FILE_NAME}\""
+  #BACKGROUND_CLAUSE="set background picture of icon view options of front Finder window to file \".background:${BACKGROUND_FILE_NAME}\""
+  REPOSITION_HIDDEN_FILES_CLAUSE="set position of every item of front Finder window to {theBottomRightX + 100, 100}"
+  POSITION_CLAUSE="set position of item \"pxscene.app\" of front Finder window to {240, 140}"
+  APPLICATION_CLAUSE="set position of item \"Applications\" of front Finder window to {240, 390}"
 
   DMG_FILE="deploy/mac/pxscene.dmg"
   DMG_DIRNAME="$(dirname "${DMG_FILE}")"
@@ -172,9 +100,8 @@ createDMG() {
   test -f "${DMG_TEMP_NAME}" && rm -f "${DMG_TEMP_NAME}"
   ACTUAL_SIZE=`du -sm "${SRC_FOLDER}" | cut -f1`
   DISK_IMAGE_SIZE=$(expr ${ACTUAL_SIZE} + 20)
-  printf "  Creating temporary template"
-  hdiutil create -srcfolder "${SRC_FOLDER}" -volname "${VOLUME_NAME}" -fs HFS+ -fsargs "-c c=64,a=16,e=16" -format UDRW -size ${DISK_IMAGE_SIZE}m "${DMG_TEMP_NAME}"
-  
+  printf "  Creating temporary template "
+  hdiutil create -srcfolder "${SRC_FOLDER}" -volname "${VOLUME_NAME}" -fs HFS+ -fsargs "-c c=64,a=16,e=16" -format UDRW -size ${DISK_IMAGE_SIZE}m "${DMG_TEMP_NAME}" || true
 
   DEV_NAME=$(hdiutil info | egrep '^/dev/' | sed 1q | awk '{print $1}')
   test -d "${MOUNT_DIR}" && hdiutil detach "${DEV_NAME}"
@@ -205,10 +132,9 @@ createDMG() {
   APPLESCRIPT=$(mktemp -t createdmg)
   printf "  Creating Applescript in ${APPLESCRIPT} for customizing DMG..."
   printf 'on run (volumeName)
-tell application "System Events"
-	get the name of every disk
-	open disk (volumeName as string)
+  -- tell application "System Events"
 	tell application "Finder"
+  tell computer container
 		tell disk (volumeName as string)
 			open
 			
@@ -221,33 +147,27 @@ tell application "System Events"
 			set theBottomRightY to (theYOrigin + theHeight)
 			set dsStore to \"\\\"\" & "/Volumes/" & volumeName & "/" & ".DS_STORE\\\""
 			
-			tell container window
-				set current view to icon view
-				set toolbar visible to false
-				set statusbar visible to false
-				set the bounds to {theXOrigin, theYOrigin, theBottomRightX, theBottomRightY}
-				set statusbar visible to false
-				set position of every item to {theBottomRightX + 100, 100}
-			end tell
-			
-			set opts to the icon view options of container window
-			tell opts
-				set icon size to ICON_SIZE
-				set text size to TEXT_SIZE
-				set arrangement to not arranged
-			end tell
-			BACKGROUND_CLAUSE
-			
-			-- Positioning
-			POSITION_CLAUSE
-			
-			-- Hiding
-			HIDING_CLAUSE
-			
-			-- Application Link Clause
-			APPLICATION_CLAUSE
-            close
-            open
+				tell application "Finder"
+					set the target of the front Finder window to volumeName
+					delay 1
+					tell front Finder window
+						set toolbar visible to false
+						set current view to icon view
+						set toolbar visible to false
+						set statusbar visible to false
+						set the bounds to {theXOrigin, theYOrigin, theBottomRightX, theBottomRightY}
+-- BACKGROUND_CLAUSE
+					end tell
+					set icon size of icon view options of front Finder window to ICON_SIZE
+					set text size of icon view options of front Finder window to TEXT_SIZE
+					-- BACKGROUND_CLAUSE
+          -- set background picture of icon view options of front Finder window to file bkgImage
+					REPOSITION_HIDDEN_FILES_CLAUSE
+					APPLICATION_CLAUSE
+					POSITION_CLAUSE
+				end tell
+        close
+        open
 			
 			update without registering applications
 			-- Force saving of the size
@@ -259,6 +179,7 @@ tell application "System Events"
 			end tell
 			
 			update without registering applications
+
 		end tell
 		
 		delay 1
@@ -274,7 +195,7 @@ tell application "System Events"
 		
 		--give the finder some time to write the .DS_Store file
 		delay 3
-		
+
 		set waitTime to 0
 		set ejectMe to false
 		repeat while ejectMe is false
@@ -284,7 +205,8 @@ tell application "System Events"
 			if (do shell script "[ -f " & dsStore & " ]; echo ${?}") = "0" then set ejectMe to true
 		end repeat
 	end tell
-end tell
+  end tell
+ -- end tell
   end run' | sed -e "s/WINX/${WINX}/g" -e "s/WINY/${WINY}/g" -e "s/WINW/${WINW}/g" -e "s/WINH/${WINH}/g" -e "s/BACKGROUND_CLAUSE/${BACKGROUND_CLAUSE}/g" -e "s/REPOSITION_HIDDEN_FILES_CLAUSE/${REPOSITION_HIDDEN_FILES_CLAUSE}/g" -e "s/ICON_SIZE/${ICON_SIZE}/g" -e "s/TEXT_SIZE/${TEXT_SIZE}/g" | perl -pe  "s/POSITION_CLAUSE/${POSITION_CLAUSE}/g" | perl -pe "s/APPLICATION_CLAUSE/${APPLICATION_CLAUSE}/g" | perl -pe "s/HIDING_CLAUSE/${HIDING_CLAUSE}/" >"${APPLESCRIPT}"
   printf "done.\n"
 
