@@ -74,7 +74,7 @@ createDMG() {
   #applescript clauses to set icon positions within the dmg
   BACKGROUND_CLAUSE="set background picture of icon view options to file \".background:${BACKGROUND_FILE_NAME}\""
   #BACKGROUND_CLAUSE="set background picture of icon view options of front Finder window to file \".background:${BACKGROUND_FILE_NAME}\""
-  REPOSITION_HIDDEN_FILES_CLAUSE="set position of every item of front Finder window to {theBottomRightX + 100, 100}"
+  #REPOSITION_HIDDEN_FILES_CLAUSE="set position of every item of front Finder window to {theBottomRightX + 100, 100}"
   POSITION_CLAUSE="set position of item \"pxscene.app\" of front Finder window to {240, 140}"
   APPLICATION_CLAUSE="set position of item \"Applications\" of front Finder window to {240, 390}"
 
@@ -162,7 +162,8 @@ createDMG() {
 					set text size of icon view options of front Finder window to TEXT_SIZE
 					-- BACKGROUND_CLAUSE
           -- set background picture of icon view options of front Finder window to file bkgImage
-					REPOSITION_HIDDEN_FILES_CLAUSE
+					-- REPOSITION_HIDDEN_FILES_CLAUSE
+          set position of every item of front Finder window to {theBottomRightX + 100, 100}
 					APPLICATION_CLAUSE
 					POSITION_CLAUSE
 				end tell
