@@ -151,7 +151,7 @@ createDMG() {
 					set the target of the front Finder window to volumeName
 					delay 1
 					tell front Finder window
-						set toolbar visible to false
+						--set toolbar visible to false
 						set current view to icon view
 						set toolbar visible to false
 						set statusbar visible to false
@@ -163,7 +163,9 @@ createDMG() {
 					-- BACKGROUND_CLAUSE
           -- set background picture of icon view options of front Finder window to file bkgImage
 					-- REPOSITION_HIDDEN_FILES_CLAUSE
-          set position of every item of front Finder window to {theBottomRightX + 100, 100}
+          tell every item of front Finder window
+						set position to {theBottomRightX + 100, 100}
+					end tell
 					APPLICATION_CLAUSE
 					POSITION_CLAUSE
 				end tell
