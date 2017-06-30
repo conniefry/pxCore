@@ -161,14 +161,13 @@ createDMG() {
 					set icon size of icon view options of front Finder window to ICON_SIZE
 					set text size of icon view options of front Finder window to TEXT_SIZE
 					-- BACKGROUND_CLAUSE
-          -- set background picture of icon view options of front Finder window to file bkgImage
+          -- set background picture of icon view options of front Finder window to file \".background:${BACKGROUND_FILE_NAME}\"
 					-- REPOSITION_HIDDEN_FILES_CLAUSE
-          tell every item of front Finder window
-						set position to {theBottomRightX + 100, 100}
-					end tell
+          set position of every item of front Finder window to {theBottomRightX + 100, 100}
 					APPLICATION_CLAUSE
 					POSITION_CLAUSE
 				end tell
+        delay 4
         close
         open
 			
