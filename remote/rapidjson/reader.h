@@ -651,14 +651,27 @@ private:
         unsigned codepoint = 0;
         for (int i = 0; i < 4; i++) {
             Ch c = is.Take();
-            codepoint <<= 4;
+        /* MODIFIED CODE BEGIN */  
+	    unsigned temp = (codepoint << 4);
+            if (temp/16 != codepoint)
+            {
+                RAPIDJSON_PARSE_ERROR_NORETURN(kParseErrorStringUnicodeEscapeInvalidHex, is.Tell() - 1);
+                RAPIDJSON_PARSE_ERROR_EARLY_RETURN(0);
+            }
+            else
+            {
+              codepoint = temp;
+            }
+        /* MODIFIED CODE END */
             codepoint += static_cast<unsigned>(c);
-            if (c >= '0' && c <= '9')
+        /* MODIFIED CODE BEGIN */  
+            if ((c >= '0') && (c <= '9') && (codepoint >= (unsigned)'0'))
                 codepoint -= '0';
-            else if (c >= 'A' && c <= 'F')
-                codepoint -= 'A' - 10;
-            else if (c >= 'a' && c <= 'f')
-                codepoint -= 'a' - 10;
+            else if ((c >= 'A') && (c <= 'F') && (codepoint >= (unsigned)('A' - 10)))
+                codepoint -= ('A' - 10);
+            else if ((c >= 'a') && (c <= 'f') && (codepoint >= (unsigned)('a' - 10)))
+                codepoint -= ('a' - 10);
+        /* MODIFIED CODE END */  
             else {
                 RAPIDJSON_PARSE_ERROR_NORETURN(kParseErrorStringUnicodeEscapeInvalidHex, is.Tell() - 1);
                 RAPIDJSON_PARSE_ERROR_EARLY_RETURN(0);
