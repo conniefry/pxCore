@@ -15,12 +15,12 @@ before_install:
 
 install:
   - ./ci/install.sh
-#before_script:
-#  - if [ "$TRAVIS_EVENT_TYPE" = "push" ] || [ "$TRAVIS_EVENT_TYPE" = "pull_request" ]; then ccache -s; fi
-#  - ./ci/before_script.sh
+before_script:
+  - if [ "$TRAVIS_EVENT_TYPE" = "push" ] || [ "$TRAVIS_EVENT_TYPE" = "pull_request" ]; then ccache -s; fi
+  - ./ci/before_script.sh
 #  - if [ "$TRAVIS_EVENT_TYPE" = "cron" ]; then export linenumber=`awk '/CFBundleShortVersionString/{ print NR; exit }' $TRAVIS_BUILD_DIR/examples/pxScene2d/src/macstuff/Info.plist`;export PX_VERSION=`sed -n "\`echo $((linenumber+1))\`p" $TRAVIS_BUILD_DIR/examples/pxScene2d/src/macstuff/Info.plist|awk -F '<string>' '{print $2}'|awk -F'</string>' '{print $1}'`; fi
-#script:
-#  - ./ci/script.sh
+script:
+  - ./ci/clean_coverity.sh
 #after_script:
 #  - ./ci/after_script.sh
 #  - if [ "$TRAVIS_EVENT_TYPE" != "pull_request" ]; then  rm -rf /tmp/pxscene-build.pem; fi
