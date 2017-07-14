@@ -15,15 +15,15 @@ before_install:
 
 install:
   - ./ci/install.sh
-before_script:
+#before_script:
 #  - if [ "$TRAVIS_EVENT_TYPE" = "push" ] || [ "$TRAVIS_EVENT_TYPE" = "pull_request" ]; then ccache -s; fi
-  - ./ci/before_script.sh
+#  - ./ci/before_script.sh
 #  - if [ "$TRAVIS_EVENT_TYPE" = "cron" ]; then export linenumber=`awk '/CFBundleShortVersionString/{ print NR; exit }' $TRAVIS_BUILD_DIR/examples/pxScene2d/src/macstuff/Info.plist`;export PX_VERSION=`sed -n "\`echo $((linenumber+1))\`p" $TRAVIS_BUILD_DIR/examples/pxScene2d/src/macstuff/Info.plist|awk -F '<string>' '{print $2}'|awk -F'</string>' '{print $1}'`; fi
-script:
+#script:
 #  - ./ci/script.sh
-after_script:
-  - ./ci/after_script.sh
-  - if [ "$TRAVIS_EVENT_TYPE" != "pull_request" ]; then  rm -rf /tmp/pxscene-build.pem; fi
+#after_script:
+#  - ./ci/after_script.sh
+#  - if [ "$TRAVIS_EVENT_TYPE" != "pull_request" ]; then  rm -rf /tmp/pxscene-build.pem; fi
 addons:
   ssh_known_hosts: 96.118.6.151
   coverity_scan:
@@ -31,8 +31,8 @@ addons:
       name: "conniefry/pxCore"
       description: "Build submitted via Travis CI"
     notification_email: constance_fry@cable.comcast.com
-    build_command_prepend: "$TRAVIS_BUILD_DIR/ci/clean_coverity.sh"
-    build_command:   "$TRAVIS_BUILD_DIR/ci/make_coverity.sh"
+    build_command_prepend: "echo build prepend"
+    build_command:   "./ci/make_coverity.sh"
     branch_pattern: coverity_scan
 cache: ccache
 env:
