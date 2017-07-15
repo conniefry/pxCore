@@ -139,7 +139,7 @@ static inline bool file_exists(const char *file)
 #endif
 
 rtNodeContext::rtNodeContext(Isolate *isolate,Platform* platform) :
-     mIsolate(isolate), mEnv(NULL), mRefCount(0),mPlatform(platform)
+     js_file(NULL), mIsolate(isolate), mEnv(NULL), mRefCount(0),mPlatform(platform)
 {
   assert(isolate); // MUST HAVE !
   mId = rtAtomicInc(&sNextId);
@@ -149,7 +149,7 @@ rtNodeContext::rtNodeContext(Isolate *isolate,Platform* platform) :
 
 #ifdef USE_CONTEXTIFY_CLONES
 rtNodeContext::rtNodeContext(Isolate *isolate, rtNodeContextRef clone_me) :
-      mIsolate(isolate), mEnv(NULL), mRefCount(0), mContextifyContext(NULL)
+      js_file(NULL), mIsolate(isolate), mEnv(NULL), mRefCount(0), mContextifyContext(NULL)
 {
   assert(mIsolate); // MUST HAVE !
   mId = rtAtomicInc(&sNextId);
@@ -681,9 +681,9 @@ rtObjectRef rtNodeContext::runFile(const char *file, const char* /*args = NULL*/
 rtNode::rtNode()
 #ifndef RUNINMAIN
 #ifdef USE_CONTEXTIFY_CLONES
-: mRefContext(), mNeedsToEnd(false)/*: mPlatform(NULL)*/
+: mIsolate(0), mPlatform(NULL), mRefContext(), mTestGc(false), mNeedsToEnd(false)
 #else
-: mNeedsToEnd(false)/*: mPlatform(NULL)*/
+: mIsolate(0), mPlatform(NULL), mTestGc(false), mNeedsToEnd(false)
 #endif
 #endif
 {
@@ -694,9 +694,9 @@ rtNode::rtNode()
 rtNode::rtNode(bool initialize)
 #ifndef RUNINMAIN
 #ifdef USE_CONTEXTIFY_CLONES
-: mRefContext(), mNeedsToEnd(false)/*: mPlatform(NULL)*/
+: mIsolate(0), mPlatform(NULL), mRefContext(), mTestGc(false), mNeedsToEnd(false)
 #else
-: mNeedsToEnd(false)/*: mPlatform(NULL)*/
+: mIsolate(0), mPlatform(NULL), mTestGc(false), mNeedsToEnd(false)
 #endif
 #endif
 {
@@ -1006,7 +1006,7 @@ rtNodeContextRef rtNode::createContext(bool ownThread)
 
     static std::string sandbox_path;
 
-    if(sandbox_path.empty()) // only once.
+    if(sandbox_path.empty() && ::getenv("NODE_PATH") != NULL) // only once.
     {
       const std::string NODE_PATH = ::getenv("NODE_PATH");
 
