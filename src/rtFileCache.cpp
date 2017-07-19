@@ -77,8 +77,10 @@ void  rtFileCache::initCache()
 #ifdef RT_PLATFORM_WINDOWS
     mkdir(mDirectory.cString());
 #else
-    mkdir(mDirectory.cString(), 0777);
-#endif
+    int retVal = -1;
+    retVal = mkdir(mDirectory.cString(), 0777);
+    if (0 != retVal)
+      rtLogWarn("creation of cache directory failed");
   }
   else
   {
@@ -153,12 +155,15 @@ rtError rtFileCache::setCacheDirectory(const char* directory)
 
   struct stat st;
   memset(&st,0,sizeof(struct stat));
-  if (stat(mDirectory.cString(), &st) == -1)
+  if (stat(directory, &st) == -1)
   {
 #ifdef RT_PLATFORM_WINDOWS
   mkdir(mDirectory.cString());
 #else
-  mkdir(mDirectory.cString(), 0777);
+  int retVal = -1;
+  retVal = mkdir(directory, 0777);
+  if (0 != retVal)
+    return RT_ERROR;
 #endif //RT_PLATFORM_WINDOWS
   }
   else
@@ -265,7 +270,9 @@ void rtFileCache::clearCache()
     buff << "rm -rf " << mDirectory.cString() << "/*" ;
     system(buff.str().c_str());
     mFileSizeMap.clear();
+    mCacheMutex.lock();
     mCurrentSize = 0;
+    mCacheMutex.unlock();
   }
 }
 
@@ -375,7 +382,7 @@ bool rtFileCache::readFileHeader(rtString& filename,rtHttpCacheData& cacheData)
   }
 
   bool reachedHeaderEnd = false;
-  char buffer;
+  int buffer;
   string headerData;
   while ( !feof(fp) && (reachedHeaderEnd == false))
   {
@@ -385,7 +392,7 @@ bool rtFileCache::readFileHeader(rtString& filename,rtHttpCacheData& cacheData)
       reachedHeaderEnd = true;
       break;
     }
-    headerData.append(1,buffer);
+    headerData.append(1,(char)buffer);
   }
   if (true == reachedHeaderEnd)
   {
@@ -394,6 +401,10 @@ bool rtFileCache::readFileHeader(rtString& filename,rtHttpCacheData& cacheData)
   else
   {
     rtLogWarn("Logfile is not proper");
+    int closeret = fclose(fp);
+    if (0 != closeret)
+      rtLogWarn("improper logfile close failed");
+    fp  =  NULL;
     return false;
   }
   cacheData.setFilePointer(fp);
