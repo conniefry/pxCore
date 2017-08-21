@@ -59,12 +59,13 @@ var runTests = function( i) {
               savedIndexForTimeout = i;
               setTimeout(function() {
                 console.log(">>>>>>>>>>>>INSIDE TIMEOUT");
-                if (savedIndexForTimeout+1 == numUrls)
+                if (savedIndexForTimeout+1 >= numUrls)
                 {
                   test.a = 0;
                   test.url = "";
                   stopProgressAnimation();
                   mainPage.a = 0;
+		          mainPage = null;
                   console.log("RUN COMPLETED");
                 }
                 else
