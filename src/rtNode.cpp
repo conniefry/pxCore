@@ -139,7 +139,7 @@ static inline bool file_exists(const char *file)
 #endif
 
 rtNodeContext::rtNodeContext(Isolate *isolate,Platform* platform) :
-     mIsolate(isolate), mEnv(NULL), mRefCount(0),mPlatform(platform)
+     js_file(NULL), mIsolate(isolate), mEnv(NULL), mRefCount(0),mPlatform(platform), mContextifyContext(NULL)
 {
   assert(isolate); // MUST HAVE !
   mId = rtAtomicInc(&sNextId);
@@ -149,7 +149,7 @@ rtNodeContext::rtNodeContext(Isolate *isolate,Platform* platform) :
 
 #ifdef USE_CONTEXTIFY_CLONES
 rtNodeContext::rtNodeContext(Isolate *isolate, rtNodeContextRef clone_me) :
-      mIsolate(isolate), mEnv(NULL), mRefCount(0), mContextifyContext(NULL)
+      js_file(NULL), mIsolate(isolate), mEnv(NULL), mRefCount(0), mPlatform(NULL), mContextifyContext(NULL)
 {
   assert(mIsolate); // MUST HAVE !
   mId = rtAtomicInc(&sNextId);
@@ -453,18 +453,23 @@ rtNodeContext::~rtNodeContext()
   // NOTE: 'mIsolate' is owned by rtNode.  Don't destroy here !
 }
 
-
-void rtNodeContext::add(const char *name, rtValue const& val)
+rtError rtNodeContext::add(const char *name, rtValue const& val)
 {
   if(name == NULL)
   {
     rtLogDebug(" rtNodeContext::add() - no symbolic name for rtValue");
-    return;
+    return RT_FAIL;
   }
   else if(this->has(name))
   {
     rtLogDebug(" rtNodeContext::add() - ALREADY HAS '%s' ... over-writing.", name);
    // return; // Allow for "Null"-ing erasure.
+  }
+  
+  if(val.isEmpty())
+  {
+    rtLogDebug(" rtNodeContext::add() - rtValue is empty");
+    return RT_FAIL;
   }
 
   Locker                locker(mIsolate);
@@ -476,6 +481,8 @@ void rtNodeContext::add(const char *name, rtValue const& val)
   Context::Scope context_scope(local_context);
 
   local_context->Global()->Set( String::NewFromUtf8(mIsolate, name), rt2js(local_context, val));
+  
+  return RT_OK;
 }
 
 rtValue rtNodeContext::get(std::string name)
@@ -559,49 +566,51 @@ bool rtNodeContext::has(const char *name)
   return ( !value->IsUndefined() && !value->IsNull() );
 }
 
-bool rtNodeContext::find(const char *name)
-{
-  rtNodeContexts_iterator it = mNodeContexts.begin();
+// DEPRECATED - 'has()' is replacement for 'find()'
+//
+// bool rtNodeContext::find(const char *name)
+// {
+//   rtNodeContexts_iterator it = mNodeContexts.begin();
+//
+//   while(it != mNodeContexts.end())
+//   {
+//     rtNodeContextRef ctx = it->second;
+//
+//     rtLogWarn("\n ######## CONTEXT !!! ID: %d  %s  '%s'",
+//       ctx->getContextId(),
+//       (ctx->has(name) ? "*HAS*" : "does NOT have"),
+//       name);
+//
+//     it++;
+//   }
+//
+//   rtLogWarn("\n ");
+//
+//   return false;
+// }
 
-  while(it != mNodeContexts.end())
-  {
-    rtNodeContextRef ctx = it->second;
-
-    rtLogWarn("\n ######## CONTEXT !!! ID: %d  %s  '%s'",
-      ctx->getContextId(),
-      (ctx->has(name) ? "*HAS*" : "does NOT have"),
-      name);
-
-    it++;
-  }
-
-  rtLogWarn("\n ");
-
-  return false;
-}
-
-rtObjectRef rtNodeContext::runScript(const char *script, const char *args /*= NULL*/)
+rtError rtNodeContext::runScript(const char* script, rtValue* retVal /*= NULL*/, const char *args /*= NULL*/)
 {
   if(script == NULL)
   {
     rtLogError(" %s  ... no script given.",__PRETTY_FUNCTION__);
 
-    return  rtObjectRef(0);// JUNK
+    return RT_FAIL;
   }
 
   // rtLogDebug(" %s  ... Running...",__PRETTY_FUNCTION__);
 
-  return runScript(std::string(script), args);
+  return runScript(std::string(script), retVal, args);
 }
 
-rtObjectRef rtNodeContext::runScript(const std::string &script, const char* /* args = NULL*/)
+rtError rtNodeContext::runScript(const std::string &script, rtValue* retVal /*= NULL*/, const char* /* args = NULL*/)
 {
   rtLogInfo(__FUNCTION__);
   if(script.empty())
   {
     rtLogError(" %s  ... no script given.",__PRETTY_FUNCTION__);
 
-    return  rtObjectRef(0);// JUNK
+    return RT_FAIL;
   }
 
   {//scope
@@ -633,19 +642,29 @@ rtObjectRef rtNodeContext::runScript(const std::string &script, const char* /* a
     {
       String::Utf8Value trace(tryCatch.StackTrace());
       rtLogWarn("%s", *trace);
+
+      return RT_FAIL;
     }
 #endif
-    // Convert the result to an UTF8 string and print it.
-    String::Utf8Value utf8(result);
 
-    // TODO:
-    // rtLogDebug("\n retVal \"%s\" = %s\n\n",script.c_str(), *result);
-    //  rtString foo ( (char *) *utf8);
-    //  return rtObjectRef( new rtValue( rtString( (char *) *utf8) ) );
+    if(retVal)
+    {
+      // Return val
+      rtWrapperError error;
+      *retVal = js2rt(local_context, result, &error);
+      
+      if(error.hasError())
+      {
+        rtLogError("js2rt() - return from script error");
+        return RT_FAIL;
+      }
+    }
+
+   return RT_OK;
 
   }//scope
 
-  return rtObjectRef(0);// JUNK
+  return RT_FAIL;
 }
 
 std::string readFile(const char *file)
@@ -660,20 +679,27 @@ std::string readFile(const char *file)
   return s;
 }
 
-rtObjectRef rtNodeContext::runFile(const char *file, const char* /*args = NULL*/)
+rtError rtNodeContext::runFile(const char *file, rtValue* retVal /*= NULL*/, const char* args /*= NULL*/)
 {
   if(file == NULL)
   {
     rtLogError(" %s  ... no script given.",__PRETTY_FUNCTION__);
 
-    return  rtObjectRef(0);// JUNK
+    return RT_FAIL;
   }
 
   // Read the script file
   js_file   = file;
   js_script = readFile(file);
+  
+  if( js_script.empty() ) // load error
+  {
+    rtLogError(" %s  ... load error / not found.",__PRETTY_FUNCTION__);
+     
+    return RT_FAIL;
+  }
 
-  return runScript(js_script);
+  return runScript(js_script, retVal, args);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -681,26 +707,32 @@ rtObjectRef rtNodeContext::runFile(const char *file, const char* /*args = NULL*/
 rtNode::rtNode()
 #ifndef RUNINMAIN
 #ifdef USE_CONTEXTIFY_CLONES
-: mRefContext(), mNeedsToEnd(false)/*: mPlatform(NULL)*/
+: mRefContext(), mNeedsToEnd(false)
 #else
-: mNeedsToEnd(false)/*: mPlatform(NULL)*/
+: mNeedsToEnd(false)
 #endif
 #endif
 {
   rtLogInfo(__FUNCTION__);
+  mTestGc = false;
+  mIsolate = NULL;
+  mPlatform = NULL;
   initializeNode();
 }
 
 rtNode::rtNode(bool initialize)
 #ifndef RUNINMAIN
 #ifdef USE_CONTEXTIFY_CLONES
-: mRefContext(), mNeedsToEnd(false)/*: mPlatform(NULL)*/
+: mRefContext(), mNeedsToEnd(false)
 #else
-: mNeedsToEnd(false)/*: mPlatform(NULL)*/
+: mNeedsToEnd(false)
 #endif
 #endif
 {
   rtLogInfo(__FUNCTION__);
+  mTestGc = false;
+  mIsolate = NULL;
+  mPlatform = NULL;
   if (true == initialize)
   {
     initializeNode();
@@ -1008,9 +1040,12 @@ rtNodeContextRef rtNode::createContext(bool ownThread)
 
     if(sandbox_path.empty()) // only once.
     {
-      const std::string NODE_PATH = ::getenv("NODE_PATH");
-
-      sandbox_path = NODE_PATH + "/" + SANDBOX_JS;
+      char *nodePath = ::getenv("NODE_PATH");
+      if (NULL != nodePath)
+      {
+        const std::string NODE_PATH = nodePath;
+        sandbox_path = NODE_PATH + "/" + SANDBOX_JS;
+      }
     }
 
     // Populate 'sandbox' vars in JS...
