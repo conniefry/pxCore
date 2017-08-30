@@ -15,6 +15,7 @@ checkError()
 
 echo Automatically merge master to coverity_scan branch
 
+git checkout master
 git checkout coverity_scan && git merge master
 
 git push --repo="https://$REPO_USER_NAME:$GH_TOKEN@github.com/$REPO_USER_NAME/$REPO_NAME.git"
