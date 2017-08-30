@@ -48,5 +48,5 @@ git checkout coverity_scan
 git status
 git merge -q jr_master
 
-git push --repo="https://$REPO_USER_NAME:$GH_TOKEN@github.com/$REPO_USER_NAME/$REPO_NAME.git"
+git push --repo="https://$GH_TOKEN@github.com/$REPO_USER_NAME/$REPO_NAME.git"
 checkError $? "unable to commit data to repo" "" "check the credentials"
