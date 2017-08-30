@@ -30,9 +30,11 @@ create_all_branches()
     #for branch in $(git branch -r|grep -v HEAD) ; do
     #    git checkout -qf ${branch#origin/}
     #done
+    git checkout jr_master
+    git checkout coverity_scan
 
     # finally, go back to where we were at the beginning
-    git checkout ${build_head}
+    #git checkout ${build_head}
 }
 
 echo Automatically merge master to coverity_scan branch
@@ -40,6 +42,7 @@ echo Automatically merge master to coverity_scan branch
 create_all_branches 
 
 #git checkout jr_master
+git status
 git checkout origin/coverity_scan && git merge origin/jr_master
 
 git push --repo="https://$REPO_USER_NAME:$GH_TOKEN@github.com/$REPO_USER_NAME/$REPO_NAME.git"
