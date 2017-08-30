@@ -40,7 +40,7 @@ echo Automatically merge master to coverity_scan branch
 create_all_branches 
 
 #git checkout jr_master
-git checkout coverity_scan && git merge jr_master
+git checkout origin/coverity_scan && git merge origin/jr_master
 
 git push --repo="https://$REPO_USER_NAME:$GH_TOKEN@github.com/$REPO_USER_NAME/$REPO_NAME.git"
 checkError $? "unable to commit data to repo" "" "check the credentials"
