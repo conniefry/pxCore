@@ -37,6 +37,8 @@ create_all_branches()
 
 echo Automatically merge master to coverity_scan branch
 
+create_all_branches 
+
 #git checkout jr_master
 git checkout coverity_scan && git merge jr_master
 
