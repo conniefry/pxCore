@@ -32,7 +32,7 @@ addons:
     build_command_prepend: "echo build prepend"
     build_command:   "./ci/make_coverity.sh"
     branch_pattern: coverity_scan
-cache: ccache
+
 env:
   global:
    # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
