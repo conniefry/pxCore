@@ -12,41 +12,50 @@ checkError()
   fi
 }
 
-create_all_branches()
-{
-    # Keep track of where Travis put us.
-    # We are on a detached head, and we need to be able to go back to it.
-    local build_head=$(git rev-parse HEAD)
-
-    # Fetch all the remote branches. Travis clones with `--depth`, which
-    # implies `--single-branch`, so we need to overwrite remote.origin.fetch to
-    # do that.
-    git config --replace-all remote.origin.fetch +refs/heads/*:refs/remotes/origin/*
-    git fetch
-    # optionally, we can also fetch the tags
-    # git fetch --tags
-
-    # reate the tracking branchescreate the tracking branches
-    #for branch in $(git branch -r|grep -v HEAD) ; do
-    #    git checkout -qf ${branch#origin/}
-    #done
-    git checkout jr_master
-    git checkout coverity_scan
-
-    # finally, go back to where we were at the beginning
-    #git checkout ${build_head}
-}
-
 echo Automatically merge master to coverity_scan branch
 
-create_all_branches 
+# Keep track of where Travis put us.
+# We are on a detached head, and we need to be able to go back to it.
+build_head=$(git rev-parse HEAD)
 
-git status
+# Fetch all the remote branches. Travis clones with `--depth`, which
+# implies `--single-branch`, so we need to overwrite remote.origin.fetch to
+# do that.
+git config --replace-all remote.origin.fetch +refs/heads/*:refs/remotes/origin/*
+git fetch
+# optionally, we can also fetch the tags
+# git fetch --tags
+
 git checkout jr_master
 git status
-git checkout coverity_scan
+git pull
+echo 'status for jr_master after pull'
 git status
-git merge -q jr_master
 
-git push --repo="https://$GH_TOKEN@github.com/$REPO_USER_NAME/$REPO_NAME.git"
+git checkout coverity_scan
+echo 'status for coverity_scan before pull'
+git status
+git pull
+echo 'status for coverity_scan after pull'
+git status
+
+#git status
+echo 'Doing merge'
+git merge -q jr_master
+echo 'status for coverity_scan after merge'
+git status 
+
+echo Doing push
+if [ "$TRAVIS_EVENT_TYPE" = "cron" ] ;
+then
+  echo using TRAVIS_REPO_SLUG
+  git push --repo="https://$GH_TOKEN@github.com/$TRAVIS_REPO_SLUG.git"
+else
+  echo not cron job
+  git push --repo="https://$GH_TOKEN@github.com/$REPO_USER_NAME/$REPO_NAME.git"
+fi
 checkError $? "unable to commit data to repo" "" "check the credentials"
+
+echo Done with push
+# finally, checkout the branch at HEAD to get our last commit
+git checkout coverity_scan
