@@ -27,11 +27,25 @@ git fetch
 # git fetch --tags
 
 git checkout jr_master
+git status
+git pull
+echo 'status for jr_master after pull'
+git status
+
 git checkout coverity_scan
+echo 'status for coverity_scan before pull'
+git status
+git pull
+echo 'status for coverity_scan after pull'
+git status
 
 #git status
+echo 'Doing merge'
 git merge -q jr_master
+echo 'status for coverity_scan after merge'
+git status 
 
+echo Doing push
 if [ "$TRAVIS_EVENT_TYPE" = "cron" ] ;
 then
   echo using TRAVIS_REPO_SLUG
@@ -42,5 +56,6 @@ else
 fi
 checkError $? "unable to commit data to repo" "" "check the credentials"
 
+echo Done with push
 # finally, checkout the branch at HEAD to get our last commit
 git checkout coverity_scan
