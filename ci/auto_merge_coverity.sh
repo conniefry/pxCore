@@ -42,5 +42,5 @@ else
 fi
 checkError $? "unable to commit data to repo" "" "check the credentials"
 
-# finally, go back to where we were at the beginning
-git checkout ${build_head}
+# finally, checkout the branch at HEAD to get our last commit
+git checkout coverity_scan
