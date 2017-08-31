@@ -32,7 +32,14 @@ git checkout coverity_scan
 #git status
 git merge -q jr_master
 
-git push --repo="https://$GH_TOKEN@github.com/$REPO_USER_NAME/$REPO_NAME.git"
+if [ "$TRAVIS_EVENT_TYPE" = "cron" ] ;
+then
+  echo using TRAVIS_REPO_SLUG
+  git push --repo="https://$GH_TOKEN@github.com/$TRAVIS_REPO_SLUG.git"
+else
+  echo not cron job
+  git push --repo="https://$GH_TOKEN@github.com/$REPO_USER_NAME/$REPO_NAME.git"
+fi
 checkError $? "unable to commit data to repo" "" "check the credentials"
 
 # finally, go back to where we were at the beginning
