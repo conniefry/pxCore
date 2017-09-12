@@ -44,6 +44,20 @@ pxImage9::~pxImage9()
   mResource = NULL;
 }
 
+void pxImage9::dispose()
+{
+  if (mListenerAdded)
+  {
+    if (getImageResource())
+    {
+      getImageResource()->removeListener(this);
+    }
+    mListenerAdded = false;
+  }
+  mResource = NULL;
+  pxObject::dispose();
+}
+
 void pxImage9::onInit()
 {
   mInitialized = true;

@@ -46,9 +46,9 @@ pxImageA::~pxImageA()
     {
       getImageAResource()->removeListener(this);
     }
-    mResource = NULL;
     mListenerAdded = false;
   }
+  mResource = NULL;
 }
 
 void pxImageA::onInit() 
@@ -169,9 +169,9 @@ void pxImageA::dispose()
     {
       getImageAResource()->removeListener(this);
     }
-    mResource = NULL;
     mListenerAdded = false;
   }
+  mResource = NULL;
   pxObject::dispose();
 }
 

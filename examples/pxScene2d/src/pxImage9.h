@@ -67,6 +67,7 @@ public:
   virtual void createNewPromise() { rtLogDebug("pxImage9 ignoring createNewPromise\n"); }
   virtual float getOnscreenWidth();
   virtual float getOnscreenHeight();
+  virtual void dispose();
   
 protected:
   virtual void draw();

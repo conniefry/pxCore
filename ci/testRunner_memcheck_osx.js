@@ -7,6 +7,10 @@ var root = scene.root;
 console.log("Starting testRunner_memcheck.js...");
 
 var testRunnerUrl = "https://px-apps.sys.comcast.net/pxscene-samples/examples/px-reference/test-run/testRunner.js";
+
+if( px.appQueryParams.tests !== undefined) {
+  testRunnerUrl += "?tests="+px.appQueryParams.tests;
+}
 // Info about tests to be run
 var testUrls = ["http://pxscene.org/examples/px-reference/gallery/fancy.js",
                 "http://pxscene.org/examples/px-reference/gallery/picturepile.js",

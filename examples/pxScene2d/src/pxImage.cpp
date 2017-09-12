@@ -246,9 +246,9 @@ void pxImage::dispose()
     {
       getImageResource()->removeListener(this);
     }
-    mResource = NULL;
     mListenerAdded = false;
   }
+  mResource = NULL;
   pxObject::dispose();
 }
 
