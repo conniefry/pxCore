@@ -303,7 +303,7 @@ void rtImageResource::loadResourceFromFile()
     // Since this object can be released before we get a async completion
     // We need to maintain this object's lifetime
     // TODO review overall flow and organization
-    AddRef();
+    //AddRef();
     gUIThreadQueue.addTask(onDownloadCompleteUI, this, (void*)"reject");
     //mTexture->notifyListeners( mTexture, RT_FAIL, errorCode);
 
