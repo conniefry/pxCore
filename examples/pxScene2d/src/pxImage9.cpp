@@ -41,6 +41,7 @@ pxImage9::~pxImage9()
     }
     mListenerAdded = false;
   }
+  mResource = NULL;
 }
 
 void pxImage9::onInit()
