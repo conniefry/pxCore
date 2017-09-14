@@ -233,7 +233,7 @@ rtError rtImageResource::h(int32_t& v) const
 } 
 
 /** 
- * rtImageResource::loadResource()
+ * pxResource::loadResource()
  * 
  * This method will actually start the download of the image for mUrl.
  * 
@@ -244,6 +244,7 @@ rtError rtImageResource::h(int32_t& v) const
 void pxResource::loadResource()
 {
   mLoadStatus.set("statusCode", -1);
+  AddRef();
   //rtLogDebug("rtImageResource::loadResource statusCode should be -1; is statusCode=%d\n",mLoadStatus.get<int32_t>("statusCode"));
   if (mUrl.beginsWith("http:") || mUrl.beginsWith("https:"))
   {
@@ -262,7 +263,7 @@ void pxResource::loadResource()
 }
 void pxResource::onDownloadCompleteUI(void* context, void* data)
 {
-  pxResource* res = (rtImageResource*)context;
+  pxResource* res = (pxResource*)context;
   rtString resolution = (char*)data;
   
   res->notifyListeners(resolution);
@@ -302,7 +303,7 @@ void rtImageResource::loadResourceFromFile()
     // Since this object can be released before we get a async completion
     // We need to maintain this object's lifetime
     // TODO review overall flow and organization
-    AddRef();
+    //AddRef();
     gUIThreadQueue.addTask(onDownloadCompleteUI, this, (void*)"reject");
     //mTexture->notifyListeners( mTexture, RT_FAIL, errorCode);
 
@@ -315,7 +316,7 @@ void rtImageResource::loadResourceFromFile()
     // Since this object can be released before we get a async completion
     // We need to maintain this object's lifetime
     // TODO review overall flow and organization
-    AddRef();
+    //AddRef();
     gUIThreadQueue.addTask(onDownloadCompleteUI, this, (void *) "resolve");
 
   }
@@ -334,6 +335,7 @@ void pxResource::onDownloadComplete(rtFileDownloadRequest* fileDownloadRequest)
     // Clear download data
     ((pxResource*)fileDownloadRequest->callbackData())->mDownloadRequest = 0;
   }
+
 }
 
 bool rtImageResource::loadResourceData(rtFileDownloadRequest* fileDownloadRequest)
@@ -368,7 +370,7 @@ void pxResource::processDownloadedResource(rtFileDownloadRequest* fileDownloadRe
         // Since this object can be released before we get a async completion
         // We need to maintain this object's lifetime
         // TODO review overall flow and organization
-        AddRef();        
+        //AddRef();        
         gUIThreadQueue.addTask(pxResource::onDownloadCompleteUI, this, (void*)"reject");        
       }
       else
@@ -381,7 +383,7 @@ void pxResource::processDownloadedResource(rtFileDownloadRequest* fileDownloadRe
         // Since this object can be released before we get a async completion
         // We need to maintain this object's lifetime
         // TODO review overall flow and organization
-        AddRef();
+        //AddRef();
         gUIThreadQueue.addTask(pxResource::onDownloadCompleteUI, this, (void*)"resolve");
       }
     }
@@ -396,7 +398,7 @@ void pxResource::processDownloadedResource(rtFileDownloadRequest* fileDownloadRe
       // Since this object can be released before we get a async completion
       // We need to maintain this object's lifetime
       // TODO review overall flow and organization
-      AddRef();        
+      //AddRef();        
       gUIThreadQueue.addTask(pxResource::onDownloadCompleteUI, this, (void*)"reject");      
     }
   }
@@ -456,6 +458,7 @@ void rtImageAResource::loadResourceFromFile()
 {
   //TODO
   mLoadStatus.set("statusCode",PX_RESOURCE_STATUS_UNKNOWN_ERROR);
+  Release();
 }
 
 

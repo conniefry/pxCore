@@ -49,9 +49,10 @@ pxImage::~pxImage()
     {
       getImageResource()->removeListener(this);
     }
-    mResource = NULL;
+
     mListenerAdded = false;
   }
+  mResource = NULL;
 }
 
 void pxImage::onInit()
@@ -104,6 +105,19 @@ rtError pxImage::setResource(rtObjectRef o)
   } 
   else 
   {
+    // Clear old resource ref if there was one
+    imageLoaded = false;
+    pxObject::createNewPromise();
+    if (mListenerAdded) //previous listener?
+    {
+      if (getImageResource())
+      {
+        getImageResource()->removeListener(this);
+      }
+      mListenerAdded = false;
+    }
+    mResource = NULL;
+
     rtLogError("Object passed as resource is not an imageResource!\n");
     pxObject::onTextureReady();
     mReady.send("reject",this);
@@ -151,8 +165,6 @@ rtError pxImage::setUrl(const char* s)
       mReady.send("reject",this); // reject the original promise for old image
     } */
   }
-
-
 
   mResource = pxImageManager::getImage(s);
 
@@ -246,9 +258,10 @@ void pxImage::dispose()
     {
       getImageResource()->removeListener(this);
     }
-    mResource = NULL;
+
     mListenerAdded = false;
   }
+  mResource = NULL;
   pxObject::dispose();
 }
 

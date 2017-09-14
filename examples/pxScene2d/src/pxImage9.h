@@ -47,7 +47,7 @@ public:
   rtError setUrl(const char* s);
 
   rtError resource(rtObjectRef& o) const { /*rtLogDebug("!!!!!!!!!!!!!!!!!!!!pxImage9 getResource\n");*/o = mResource; return RT_OK; }
-  rtError setResource(rtObjectRef o) { /*rtLogDebug("!!!!!!!!!!!!!!!!!!!!!!!pxImage9 setResource\n");*/mResource = o; return RT_OK; }
+  rtError setResource(rtObjectRef o);// { /*rtLogDebug("!!!!!!!!!!!!!!!!!!!!!!!pxImage9 setResource\n");*/mResource = o; return RT_OK; }
     
   rtError insetLeft(float& v) const { v = mInsetLeft; return RT_OK; }
   rtError setInsetLeft(float v) { mInsetLeft = v; return RT_OK; }
@@ -67,6 +67,7 @@ public:
   virtual void createNewPromise() { rtLogDebug("pxImage9 ignoring createNewPromise\n"); }
   virtual float getOnscreenWidth();
   virtual float getOnscreenHeight();
+  void dispose();
   
 protected:
   virtual void draw();

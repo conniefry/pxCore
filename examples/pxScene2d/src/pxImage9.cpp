@@ -41,6 +41,22 @@ pxImage9::~pxImage9()
     }
     mListenerAdded = false;
   }
+  mResource = NULL;
+}
+
+void pxImage9::dispose()
+{
+  if (mListenerAdded)
+  {
+    if (getImageResource())
+    {
+      getImageResource()->removeListener(this);
+    }
+
+    mListenerAdded = false;
+  }
+  mResource = NULL;
+  pxObject::dispose();
 }
 
 void pxImage9::onInit()
@@ -152,6 +168,59 @@ void pxImage9::resourceReady(rtString readyResolution)
       mReady.send("reject",this);
   }
 }
+
+/**
+ * setResource
+ * */
+ rtError pxImage9::setResource(rtObjectRef o) 
+ { 
+   //rtLogDebug("!!!!!!!!!!!!!!!!!!!!!pxImage setResource\n");
+   if(!o)
+   { 
+     setUrl("");
+     return RT_OK;
+   }
+   
+   // Verify the object passed in is an rtImageResource
+   rtString desc;
+   o.sendReturns("description",desc);
+   if(!desc.compare("rtImageResource"))
+   {
+     rtString url;
+     url = o.get<rtString>("url");
+     // Only create new promise if url is different 
+     if( getImageResource() != NULL && getImageResource()->getUrl().compare(o.get<rtString>("url")) )
+     {
+       mResource = o; 
+       imageLoaded = false;
+       pxObject::createNewPromise();
+       mListenerAdded = true;
+       getImageResource()->addListener(this);
+     }
+     return RT_OK; 
+   } 
+   else 
+   {
+    // Clear old resource ref if there was one
+    imageLoaded = false;
+    pxObject::createNewPromise();
+    if (mListenerAdded) //previous listener?
+    {
+      if (getImageResource())
+      {
+        getImageResource()->removeListener(this);
+      }
+      mListenerAdded = false;
+    }
+    mResource = NULL;
+
+    rtLogError("Object passed as resource is not an imageResource!\n");
+    pxObject::onTextureReady();
+    mReady.send("reject",this);
+    return RT_ERROR; 
+   }
+ 
+ }
 
 rtDefineObject(pxImage9, pxObject);
 rtDefineProperty(pxImage9, url);
