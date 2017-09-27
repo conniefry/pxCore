@@ -41,6 +41,21 @@ pxImage9::~pxImage9()
     }
     mListenerAdded = false;
   }
+  mResource = NULL;
+}
+
+void pxImage9::dispose()
+{
+  if (mListenerAdded)
+  {
+    if (getImageResource())
+    {
+      getImageResource()->removeListener(this);
+    }
+    mListenerAdded = false;
+  }
+  mResource = NULL;
+  pxObject::dispose();
 }
 
 void pxImage9::onInit()
@@ -90,6 +105,46 @@ rtError pxImage9::setUrl(const char* s)
     
   return RT_OK;
 }
+
+/**
+ * setResource
+ * */
+ rtError pxImage9::setResource(rtObjectRef o) 
+ { 
+   //rtLogDebug("!!!!!!!!!!!!!!!!!!!!!pxImage setResource\n");
+   if(!o)
+   { 
+     setUrl("");
+     return RT_OK;
+   }
+   
+   // Verify the object passed in is an rtImageResource
+   rtString desc;
+   o.sendReturns("description",desc);
+   if(!desc.compare("rtImageResource"))
+   {
+     rtString url;
+     url = o.get<rtString>("url");
+     // Only create new promise if url is different 
+     if( getImageResource() != NULL && getImageResource()->getUrl().compare(o.get<rtString>("url")) )
+     {
+       mResource = o; 
+       imageLoaded = false;
+       pxObject::createNewPromise();
+       mListenerAdded = true;
+       getImageResource()->addListener(this);
+     }
+     return RT_OK; 
+   } 
+   else 
+   {
+     rtLogError("Object passed as resource is not an imageResource!\n");
+     pxObject::onTextureReady();
+     mReady.send("reject",this);
+     return RT_ERROR; 
+   }
+ 
+ }
 
 void pxImage9::sendPromise() 
 { 

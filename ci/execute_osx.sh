@@ -14,14 +14,14 @@ LEAKLOGS=$TRAVIS_BUILD_DIR/logs/leak_logs
 rm -rf /var/tmp/pxscene.log
 cd $TRAVIS_BUILD_DIR/examples/pxScene2d/src/pxscene.app/Contents/MacOS
 ./pxscene.sh $TRAVIS_BUILD_DIR/ci/testRunner_memcheck_$TRAVIS_OS_NAME.js?tests=file://$TRAVIS_BUILD_DIR/tests/pxScene2d/testRunner/tests.json &
-grep "RUN COMPLETED" /var/tmp/pxscene.log
+grep "RUN COMPLETED FROM MAIN" /var/tmp/pxscene.log
 retVal=$?
 count=0
 leakcount=0
 while [ "$retVal" -ne 0 ] &&  [ "$count" -ne 5400 ]; do
 leaks -nocontext pxscene > $LEAKLOGS
 sleep 30;
-grep "RUN COMPLETED" /var/tmp/pxscene.log
+grep "RUN COMPLETED FROM MAIN" /var/tmp/pxscene.log
 retVal=$?
 
 #check any crash happened, if so stop the loop
@@ -56,7 +56,7 @@ echo "leakcount during termination $leakcount"
 kill -15 `ps -ef | grep pxscene |grep -v grep|grep -v pxscene.sh|awk '{print $2}'`
 #sleep for 40s as we have sleep for 30s inside code to capture memory of process
 echo "Sleeping to make terminate complete ......";
-sleep 40s;
+sleep 90s;
 pkill -9 -f pxscene.sh
 cp /var/tmp/pxscene.log $EXECLOGS
 if [ "$cored" -eq 1 ]
