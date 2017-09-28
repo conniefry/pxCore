@@ -28,6 +28,7 @@
 #include "rtString.h"
 #include "rtNode.h"
 #include "rtPathUtils.h"
+#include "rtUrlUtils.h"
 
 #include "pxCore.h"
 #include "pxOffscreen.h"
@@ -40,6 +41,9 @@
 #include "pxText.h"
 #include "pxTextBox.h"
 #include "pxImage.h"
+#include "pxCanvas.h"
+#include "pxPath.h"
+
 #ifdef PX_SERVICE_MANAGER
 #include "pxServiceManager.h"
 #endif //PX_SERVICE_MANAGER
@@ -462,6 +466,10 @@ void pxObject::dispose()
     mClipSnapshotRef = NULL;
     mDrawableSnapshotForMask = NULL;
     mMaskSnapshot = NULL;
+    if (mScene)
+    {
+      mScene->innerpxObjectDisposed(this);
+    }
 #ifdef ENABLE_RT_NODE
     script.pump();
 #endif
@@ -1029,7 +1037,7 @@ const float alphaEpsilon = (1.0f/255.0f);
 void pxObject::drawInternal(bool maskPass)
 {
   //rtLogInfo("pxObject::drawInternal mw=%f mh=%f\n", mw, mh);
-
+  
   if (!drawEnabled() && !maskPass)
   {
     return;
@@ -1184,9 +1192,8 @@ void pxObject::drawInternal(bool maskPass)
         {
           continue;
         }
-
         context.pushState();
-        //rtLogInfo("calling drawInternal() mw=%f mh=%f\n", (*it)->mw, (*it)->mh);
+        //rtLogInfo("calling drawInternal() mw=%f mh=%f\n", (*it)->mw, (*it)->mh);                
         (*it)->drawInternal();
 #ifdef PX_DIRTY_RECTANGLES
         int left = (*it)->mScreenCoordinates.left();
@@ -1531,15 +1538,21 @@ rtDefineObject(pxRoot,pxObject);
 
 int gTag = 0;
 
-pxScene2d::pxScene2d(bool top)
-  : start(0), sigma_draw(0), sigma_update(0), end2(0), frameCount(0), mWidth(0), mHeight(0), mStopPropagation(false), mContainer(NULL), mShowDirtyRectangle(false), 
+pxScene2d::pxScene2d(bool top, pxScriptView* scriptView)
+  : start(0), sigma_draw(0), sigma_update(0), end2(0), frameCount(0), mWidth(0), mHeight(0), mStopPropagation(false), mContainer(NULL), mShowDirtyRectangle(false),
     mInnerpxObjects(), mDirty(true), mTestView(NULL), mDisposed(false)
 {
   mRoot = new pxRoot(this);
   mFocusObj = mRoot;
   mEmit = new rtEmit();
   mTop = top;
+  mScriptView = scriptView;
   mTag = gTag++;
+
+  if (scriptView != NULL)
+  {
+    mOrigin = rtUrlGetOrigin(scriptView->getUrl().cString());
+  }
 
   // make sure that initial onFocus is sent
   rtObjectRef e = new rtMapObject;
@@ -1652,6 +1665,8 @@ rtError pxScene2d::create(rtObjectRef p, rtObjectRef& o)
     e = createTextBox(p,o);
   else if (!strcmp("image",t.cString()))
     e = createImage(p,o);
+  else if (!strcmp("path",t.cString()))
+    e = createPath(p,o);
   else if (!strcmp("image9",t.cString()))
     e = createImage9(p,o);
   else if (!strcmp("imageA",t.cString()))
@@ -1744,6 +1759,28 @@ rtError pxScene2d::createImage(rtObjectRef p, rtObjectRef& o)
   return RT_OK;
 }
 
+rtError pxScene2d::createPath(rtObjectRef p, rtObjectRef& o)
+{
+  if(mCanvas == NULL) // only need one.
+  {
+    // Lazy init... only on 'path'
+    mCanvas = new pxCanvas(this);
+    mCanvas.set(p);
+    mCanvas.set("id","pxCanvas App Singleton");
+    mCanvas.set("x",0);
+    mCanvas.set("y",0);
+    mCanvas.set("w",mWidth);
+    mCanvas.set("h",mHeight);
+    
+    mCanvas.send("init");
+  }
+
+  o = new pxPath(this);
+  o.set(p);
+  o.send("init");
+  return RT_OK;
+}
+
 rtError pxScene2d::createImage9(rtObjectRef p, rtObjectRef& o)
 {
   o = new pxImage9(this);
@@ -1796,13 +1833,16 @@ rtError pxScene2d::createScene(rtObjectRef p, rtObjectRef& o)
 
 rtError pxScene2d::logDebugMetrics()
 {
-  script.garbageCollect();
-  rtLogInfo("pxobjectcount is [%d]",pxObjectCount);
-
+#ifdef ENABLE_DEBUG_METRICS 
+    script.garbageCollect();
+    rtLogInfo("pxobjectcount is [%d]",pxObjectCount);
 #ifdef PX_PLATFORM_MAC
-  rtLogInfo("texture memory usage is [%lld]",context.currentTextureMemoryUsageInBytes());
+      rtLogInfo("texture memory usage is [%lld]",context.currentTextureMemoryUsageInBytes());
 #else
-  rtLogInfo("texture memory usage is [%ld]",context.currentTextureMemoryUsageInBytes());
+      rtLogInfo("texture memory usage is [%ld]",context.currentTextureMemoryUsageInBytes());
+#endif
+#else
+    rtLogWarn("logDebugMetrics is disabled");
 #endif
   return RT_OK;
 }
@@ -2680,7 +2720,7 @@ rtError pxScene2d::getService(rtString name, rtObjectRef& returnObject)
     rtLogWarn("service manager not found");
     return result;
   }
-  result = serviceManager.sendReturns<rtObjectRef>("createService", name, returnObject);
+  result = serviceManager.sendReturns<rtObjectRef>("createService", mScriptView != NULL ? mScriptView->getUrl() : "", name, returnObject);
   rtLogInfo("create %s service result: %d", name.cString(), result);
   return result;
 #else
@@ -2907,7 +2947,6 @@ void pxSceneContainer::dispose()
     rtLogInfo(__FUNCTION__);
     //Adding ref to make sure, object not destroyed from event listeners
     AddRef();
-    mScene->innerpxObjectDisposed(this);
     setScriptView(NULL);
     pxObject::dispose();
     Release();
@@ -2935,6 +2974,7 @@ pxScriptView::pxScriptView(const char* url, const char* /*lang*/)
 {
   rtLogInfo(__FUNCTION__);
   rtLogDebug("pxScriptView::pxScriptView()entering\n");
+  mUrl = url;
 #ifndef RUNINMAIN // NOTE this ifndef ends after runScript decl, below
   mReady = new rtPromise();
  // mLang = lang;
@@ -3028,7 +3068,7 @@ rtError pxScriptView::getScene(int numArgs, const rtValue* args, rtValue* result
       if (!v->mScene)
       {
         static bool top = true;
-        pxScene2dRef scene = new pxScene2d(top);
+        pxScene2dRef scene = new pxScene2d(top, v);
         top = false;
         v->mView = scene;
         v->mScene = scene;

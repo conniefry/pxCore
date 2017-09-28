@@ -1099,6 +1099,8 @@ public:
     return RT_OK;
   }
 
+  rtString getUrl() const { return mUrl; }
+
   static rtError addListener(rtString  eventName, const rtFunctionRef& f)
   {
     return mEmit->addListener(eventName, f);
@@ -1294,8 +1296,8 @@ public:
 
   rtMethodNoArgAndNoReturn("dispose",dispose);
 
-  pxScene2d(bool top = true);
-  virtual ~pxScene2d() 
+  pxScene2d(bool top = true, pxScriptView* scriptView = NULL);
+  virtual ~pxScene2d()
   {
      rtLogDebug("***** deleting pxScene2d\n");
     if (mTestView != NULL)
@@ -1340,6 +1342,7 @@ public:
   rtError createText(rtObjectRef p, rtObjectRef& o);
   rtError createTextBox(rtObjectRef p, rtObjectRef& o);
   rtError createImage(rtObjectRef p, rtObjectRef& o);
+  rtError createPath(rtObjectRef p, rtObjectRef& o);
   rtError createImage9(rtObjectRef p, rtObjectRef& o);
   rtError createImageA(rtObjectRef p, rtObjectRef& o);
   rtError createImageResource(rtObjectRef p, rtObjectRef& o);
@@ -1440,6 +1443,8 @@ public:
     return RT_OK;
   }
 
+  rtObjectRef getCanvas() const { return mCanvas; };
+ 
   rtObjectRef  getInfo() const;
   rtError info(rtObjectRef& v) const
   {
@@ -1451,7 +1456,7 @@ public:
   {
     rtError e = RT_FAIL;
     rtRef<pxArchive> a = new pxArchive;
-    if (a->initFromUrl(url) == RT_OK)
+    if (a->initFromUrl(url, mOrigin) == RT_OK)
     {
       archive = a;
       e = RT_OK;
@@ -1484,6 +1489,9 @@ private:
   int frameCount;
   int mWidth;
   int mHeight;
+  
+  rtObjectRef mCanvas; // for SVG drawing
+  
   rtEmitRef mEmit;
 
 // TODO Top level scene only
@@ -1496,6 +1504,7 @@ private:
   bool mStopPropagation;
   int mTag;
   pxIViewContainer *mContainer;
+  pxScriptView *mScriptView;
   bool mShowDirtyRectangle;
   #ifdef USE_SCENE_POINTER
   pxTextureRef mNullTexture;
@@ -1510,6 +1519,7 @@ private:
   #endif
   bool mPointerHidden;
   std::vector<rtObjectRef> mInnerpxObjects;
+  rtString mOrigin;
 public:
   void hidePointer( bool hide )
   {
