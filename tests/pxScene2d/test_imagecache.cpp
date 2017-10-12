@@ -568,8 +568,10 @@ class rtHttpCacheTest : public testing::Test, public commonTestFns
      bool sysret = system("cp test.jpeg /var/www/.");
      sysret = system("rm test.jpeg");
      rtData contents;
-     data.data(contents);
-     EXPECT_TRUE ( strcmp(cacheData,(const char*)contents.data()) == 0);
+     if( RT_OK == data.data(contents)) {
+      EXPECT_TRUE ( strcmp(cacheData,(const char*)contents.data()) == 0);
+     }
+     else EXPECT_TRUE(false);
      sysret = system("rm -rf /var/www/test.jpeg");
    }
 
@@ -587,8 +589,10 @@ class rtHttpCacheTest : public testing::Test, public commonTestFns
      bool sysret = system("cp test1.jpeg /var/www/.");
      sysret = system("rm test1.jpeg");
      rtData contents;
-     data.data(contents);
-     EXPECT_TRUE ( strcmp(cacheData,(const char*)contents.data()) == 0);
+     if( RT_OK == data.data(contents)) {
+      EXPECT_TRUE ( strcmp(cacheData,(const char*)contents.data()) == 0);
+     }
+     else EXPECT_TRUE(false);
      sysret = system("rm -rf /var/www/test1.jpeg");
    }
 
@@ -606,9 +610,11 @@ class rtHttpCacheTest : public testing::Test, public commonTestFns
      rtHttpCacheData data("http://localhost/testRevalidationUpdate");
      rtFileCache::instance()->httpCacheData("http://localhost/testRevalidationUpdate",data);
      rtData contents;
-     data.data(contents);
-     rtData& storedData = data.contentsData();
-     EXPECT_TRUE ( strcmp("data updated",(const char*)storedData.data()) == 0);
+     if( RT_OK == data.data(contents)) {
+       rtData& storedData = data.contentsData();
+       EXPECT_TRUE ( strcmp("data updated",(const char*)storedData.data()) == 0);
+     }
+     else EXPECT_TRUE(false);
      sysret = system("rm -rf /var/www/testRevalidationUpdate");
    }
 
@@ -636,9 +642,11 @@ class rtHttpCacheTest : public testing::Test, public commonTestFns
      rtHttpCacheData data("http://localhost/testEtag");
      rtFileCache::instance()->httpCacheData("http://localhost/testEtag",data);
      rtData contents;
-     data.data(contents);
-     rtData& storedData = data.contentsData();
-     EXPECT_TRUE ( strcmp("data updated",(const char*)storedData.data()) == 0);
+     if( RT_OK == data.data(contents)) {
+       rtData& storedData = data.contentsData();
+       EXPECT_TRUE ( strcmp("data updated",(const char*)storedData.data()) == 0);
+     }
+     else EXPECT_TRUE(false);
      sysret = system("rm -rf /var/www/testEtag");
     }
 
@@ -675,36 +683,68 @@ class rtHttpCacheTest : public testing::Test, public commonTestFns
 
 TEST_F(rtHttpCacheTest, httpCacheCompleteTest)
 {
+  printf("Starting httpCacheCompleteTest\n");
+  printf("Calling dataValiditySuccessTest\n");
   dataValiditySuccessTest();
+  printf("Calling dataValiditySuccessTest\n");
   dataValidityFailureEmptyImageTest();
+  printf("Calling dataValidityFailureEmptyImageTest\n");
   dataValidityFailureExpiredImageTest();
+  printf("Calling dataValidityFailureExpiredImageTest\n");
   dataExpiredTrueTest();
+  printf("Calling dataExpiredTrueTest\n");
   dataExpiredFalseTest();
+  printf("Calling dataExpiredFalseTest\n");
   expirationDateTest();
+  printf("Calling expirationDateTest\n");
   dataWritableToCacheTrueTest();
+  printf("Calling dataWritableToCacheTrueTest\n");
   dataZeroLengthWritableToCacheFalseTest();
+  printf("Calling dataZeroLengthWritableToCacheFalseTest\n");
   dataNoStoreWritableToCacheFalseTest();
+  printf("Calling dataNoStoreWritableToCacheFalseTest\n");
   setAttributesTest();
+  printf("Calling setAttributesTest\n");
   initDataTest();
+  printf("Calling initDataTest\n");
   setDataTest();
+  printf("Calling setDataTest\n");
   readEtagTest();
+  printf("Calling readEtagTest\n");
   readEtagNotPresentTest();
+  printf("Calling readEtagNotPresentTest\n");
   readDataFileAccessFailedTest();
+  printf("Calling readDataFileAccessFailedTest\n");
   nocacheCompleteResponseTest();
+  printf("Calling nocacheCompleteResponseTest\n");
   nocacheExpiresParamTest();
+  printf("Calling nocacheExpiresParamTest\n");
   mustRevalidateUnExpiredTest();
+  printf("Calling mustRevalidateUnExpiredTest\n");
   mustRevalidateTrueExpiredTest();
+  printf("Calling mustRevalidateTrueExpiredTest\n");
   mustRevalidateFalseExpiredTest();
+  printf("Calling mustRevalidateFalseExpiredTest\n");
   mustRevalidateFalseExpiredContentsInvalidTest();
+  printf("Calling mustRevalidateFalseExpiredContentsInvalidTest\n");
   mustRevalidateTruenocacheUnExpiredTest();
+  printf("Calling mustRevalidateTruenocacheUnExpiredTest\n");
   mustRevalidateTruenocacheExpiresFiledTest();
+  printf("Calling mustRevalidateTruenocacheExpiresFiledTest\n");
   dataPresentAfterHeadersRevalidationTest();
+  printf("Calling dataPresentAfterHeadersRevalidationTest\n");
   dataPresentAfterFullRevalidationTest();
+  printf("Calling dataPresentAfterFullRevalidationTest\n");
   dataUpdatedAfterFullRevalidationTest();
+  printf("Calling dataUpdatedAfterFullRevalidationTest\n");
   dataNotUpdatedAfterFullRevalidationTest();
+  printf("Calling dataNotUpdatedAfterFullRevalidationTest\n");
   dataUpdatedAfterEtagTest();
+  printf("Calling dataUpdatedAfterEtagTest\n");
   dataUpdatedAfterEtagDownloadFailedTest();
+  printf("Calling dataUpdatedAfterEtagDownloadFailedTest\n");
   memoryUnAvailableTest();
+  printf("Done with httpCacheCompleteTest\n");
 }
 
 class rtFileDownloaderTest : public testing::Test, public commonTestFns
