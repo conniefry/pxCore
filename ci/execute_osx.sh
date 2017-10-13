@@ -19,8 +19,9 @@ grep "TEST RESULTS: " /var/tmp/pxscene.log
 retVal=$?
 count=0
 leakcount=0
-while [ "$retVal" -ne 0 ] &&  [ "$count" -ne 5400 ]; do
+while [ "$retVal" -ne 0 ] &&  [ "$count" -ne 900 ]; do
 #leaks -nocontext pxscene > $LEAKLOGS
+echo "execute_osx snoozing for 30"
 sleep 30;
 grep "TEST RESULTS: " /var/tmp/pxscene.log
 retVal=$?
