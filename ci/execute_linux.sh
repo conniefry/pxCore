@@ -15,7 +15,7 @@ cd $TRAVIS_BUILD_DIR/examples/pxScene2d/src
 grep "TEST RESULTS: " $EXECLOGS
 retVal=$?
 count=0
-while [ "$retVal" -ne 0 ] &&  [ "$count" -ne 900 ]; do
+while [ "$retVal" -ne 0 ] &&  [ "$count" -ne 1500 ]; do
 echo "execute_linux snoozing for 30"
 sleep 30;
 grep "TEST RESULTS: " $EXECLOGS
