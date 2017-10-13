@@ -43,12 +43,13 @@ fi
 
 if [ "$TRAVIS_OS_NAME" = "osx" ] ;
 then
+  echo "Updating brew"
   brew update;
   brew upgrade cmake;
   sudo /usr/sbin/DevToolsSecurity --enable
-  lldb --version
-  lldb --help
-  man lldb
+#  lldb --version
+#  lldb --help
+#  man lldb
 fi
 
 #install lighttpd, code coverage binaries for mac
@@ -56,9 +57,13 @@ if [ "$TRAVIS_OS_NAME" = "osx" ] ;
 then
   if [ "$TRAVIS_EVENT_TYPE" = "push" ] || [ "$TRAVIS_EVENT_TYPE" = "pull_request" ]
   then
+    echo "Installing lighttpd"
     brew install lighttpd
+    echo "Installing gcovr"
     brew install gcovr
+    echo "Installing lcov"
     brew install lcov
+    echo "Installing ccache"
     brew install --HEAD ccache
     ls -al $HOME/.ccache
   fi
@@ -80,6 +85,7 @@ then
     sudo /etc/init.d/lighttpd start
   elif [ "$TRAVIS_OS_NAME" = "osx" ] ;
   then
+    echo "Setting up lighttpd"
     brew services stop lighttpd
     sudo mkdir -p /usr/local/var/www
     sudo mkdir -p /var
@@ -100,6 +106,7 @@ then
     sudo lighttpd -f /usr/local/etc/lighttpd/lighttpd.conf &
     ps -aef|grep lighttpd
     sudo netstat -a
+    echo "DONE setting up lighttpd"
   fi
 fi
 
