@@ -32,7 +32,7 @@ fi
 if [ "$TRAVIS_OS_NAME" = "osx" ] ;
 then
   brew update;
-  brew upgrade cmake;
+  brew upgrade cmake --without-docs;
   sudo /usr/sbin/DevToolsSecurity --enable
 fi
 
