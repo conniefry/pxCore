@@ -59,8 +59,8 @@ then
     brew install lighttpd
     brew install gcovr
     brew install lcov
-    brew install --HEAD ccache
-    ls -al $HOME/.ccache
+#    brew install --HEAD ccache
+#    ls -al $HOME/.ccache
   fi
 fi
 

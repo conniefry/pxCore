@@ -36,9 +36,10 @@ then
   sudo /usr/sbin/DevToolsSecurity --enable
 fi
 
-if [ "$TRAVIS_OS_NAME" = "osx" ] ; 
-then
-    brew install --HEAD ccache
-    ls -al $HOME/.ccache
-fi
+
+#if [ "$TRAVIS_OS_NAME" = "osx" ] ; 
+#then
+#    brew install --HEAD ccache
+#    ls -al $HOME/.ccache
+#fi
 exit 0;

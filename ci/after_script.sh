@@ -44,10 +44,10 @@ then
   checkError $? "unable to send artifacts to 96.118.6.151" "96.118.6.151 down?" "Retry"
 fi
 
-if [ "$TRAVIS_EVENT_TYPE" = "push" ] || [ "$TRAVIS_EVENT_TYPE" = "pull_request" ] ;
-then
-  ccache -s
-fi
+#if [ "$TRAVIS_EVENT_TYPE" = "push" ] || [ "$TRAVIS_EVENT_TYPE" = "pull_request" ] ;
+#then
+#  ccache -s
+#fi
 
 #update release  notes and info.plist in github
 if [ "$TRAVIS_EVENT_TYPE" = "api" ] && [ "$UPDATE_VERSION" = "true" ] ;
