@@ -28,7 +28,6 @@
 #include "rtString.h"
 #include "rtNode.h"
 #include "rtPathUtils.h"
-#include "rtUrlUtils.h"
 
 #include "pxCore.h"
 #include "pxOffscreen.h"
@@ -1539,7 +1538,7 @@ rtDefineObject(pxRoot,pxObject);
 int gTag = 0;
 
 pxScene2d::pxScene2d(bool top, pxScriptView* scriptView)
-  : start(0), sigma_draw(0), sigma_update(0), end2(0), frameCount(0), mWidth(0), mHeight(0), mStopPropagation(false), mContainer(NULL), mShowDirtyRectangle(false),
+  : start(0), sigma_draw(0), sigma_update(0), end2(0), frameCount(0), mWidth(0), mHeight(0), mStopPropagation(false), mContainer(NULL), mShowDirtyRectangle(false), 
     mInnerpxObjects(), mDirty(true), mTestView(NULL), mDisposed(false)
 {
   mRoot = new pxRoot(this);
@@ -1548,11 +1547,6 @@ pxScene2d::pxScene2d(bool top, pxScriptView* scriptView)
   mTop = top;
   mScriptView = scriptView;
   mTag = gTag++;
-
-  if (scriptView != NULL)
-  {
-    mOrigin = rtUrlGetOrigin(scriptView->getUrl().cString());
-  }
 
   // make sure that initial onFocus is sent
   rtObjectRef e = new rtMapObject;
@@ -2889,7 +2883,7 @@ rtDefineProperty(pxSceneContainer, ready);
 
 rtError pxSceneContainer::setUrl(rtString url)
 {
-  rtLogDebug("pxSceneContainer::setUrl(%s)",url.cString());
+  rtLogInfo("pxSceneContainer::setUrl(%s)",url.cString());
   // If old promise is still unfulfilled resolve it
   // and create a new promise for the context of this Url
   mReady.send("resolve", this);
@@ -3007,7 +3001,7 @@ void pxScriptView::runScript()
 // escape url end
 
   #ifdef ENABLE_RT_NODE
-  rtLogWarn("pxScriptView::pxScriptView is just now creating a context for mUrl=%s\n",mUrl.cString());
+  rtLogDebug("pxScriptView::pxScriptView is just now creating a context for mUrl=%s\n",mUrl.cString());
   mCtx = script.createContext();
 
   if (mCtx)
@@ -3028,7 +3022,7 @@ void pxScriptView::runScript()
     char buffer[MAX_URL_SIZE + 50];
     memset(buffer, 0, sizeof(buffer));
     snprintf(buffer, sizeof(buffer), "loadUrl(\"%s\");", mUrl.cString());
-    rtLogWarn("pxScriptView::runScript calling runScript with %s\n",mUrl.cString());
+    rtLogDebug("pxScriptView::runScript calling runScript with %s\n",mUrl.cString());
 #ifdef WIN32 // process \\ to /
 		unsigned int bufferLen = strlen(buffer);
 		char * newBuffer = (char*)malloc(sizeof(char)*(bufferLen + 1));
