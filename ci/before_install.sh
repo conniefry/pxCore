@@ -45,8 +45,8 @@ if [ "$TRAVIS_OS_NAME" = "osx" ] ;
 then
   brew update;
   brew info cmake
-  brew uninstall cmake
-  brew install cmake --without-docs;
+ # brew uninstall cmake
+ # brew install cmake --without-docs;
   sudo /usr/sbin/DevToolsSecurity --enable
   lldb --version
   lldb --help
