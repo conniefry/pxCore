@@ -10,7 +10,7 @@ export REMOTE_TEMPDIR=$(ssh -o StrictHostKeyChecking=no -p 2220 ${DEPLOY_USER}@$
 echo ${REMOTE_DIR}
 filename=$2
 scp ${filename} ${DEPLOY_USER}@${REMOTE_HOST}:${REMOTE_TEMPDIR}
-SSH="ssh -tt -o StrictHostKeyChecking=no -l ${DEPLOY_USER} ${REMOTE_HOST} -p 2220"
+SSH="ssh -tt -o StrictHostKeyChecking=no  -p 2220 -l ${DEPLOY_USER} ${REMOTE_HOST}"
 $SSH "set -e;
 sudo mkdir $REMOTE_DIR
 cd $REMOTE_TEMPDIR
