@@ -19,16 +19,20 @@ In its design a few principles were followed:
 * Basic Animation Support - Support for a basic animation timer event (frames per second) is built into the windowing abstraction making it easy to write applications that animate their contents.
 * pxCore has been ported to Windows, pocketpc (arm4), linux(x11), OSX.
 
+## pxscene
+The most popular usage of pxCore is __pxscene__. __pxscene__ is an application engine that exposes a scene graph API to a Javascript engine. It gives javascript applications access to the pxscene API for visual elements that can be used for composition.  __pxscene__ is written over top of pxCore. 
 
-The most popular usage of pxCore is __pxscene__. __pxscene__ is an application engine that exposes a scene graph API to a Javascript engine. It gives javascript applications access to the pxscene API for visual elements that can be used for composition.  __pxscene__ is written over top of pxCore. __pxscene__: 
+__pxscene__: 
 
 * supports rich animation and alpha masking primitives
 * exposes a DOM-like programming model
 * supports promises for asynchronous behaviors
 * uses W3C event bubbling semantics
 
+Information on building, debugging and features of pxscene can be found here: 
+[pxscene docs](https://github.com/pxscene/pxCore/blob/master/examples/pxScene2d/docs)
+
 __pxscene__ source code is in pxCore/examples/pxScene2d.
-Instructions for building __pxscene__ are here: [Building pxscene](https://github.com/pxscene/pxCore/blob/master/examples/pxScene2d/README.md)
-Instructions for debugging __pxscene__ javascript applications using VSCode are here: [Debugging applications](https://github.com/pxscene/pxCore/blob/master/examples/pxScene2d/VSCODE_DEBUG.md)
+Instructions for building __pxscene__ are here: [Building pxscene](https://github.com/pxscene/pxCore/blob/master/examples/pxScene2d/docs/BUILDING.md)
 
-
+Instructions for debugging __pxscene__ javascript applications using VSCode are here: [Debugging applications](https://github.com/pxscene/pxCore/blob/master/examples/pxScene2d/docs/VSCODE_DEBUG.md)
