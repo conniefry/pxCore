@@ -273,9 +273,9 @@ public:
   // Should reinvoke on changes to text, size, or scale params
   void renderTextToQuads(const char *text, uint32_t size, 
                         float nsx, float nsy, 
-                        pxTexturedQuads& quads);
+                        pxTexturedQuads& quads,
+                        float x = 0, float y = 0);
   #endif
-
   virtual void init() {}
   bool isFontLoaded() { return mInitialized;}
   rtError setupFont();
