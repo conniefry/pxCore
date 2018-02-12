@@ -481,7 +481,8 @@ void pxFont::renderText(const char *text, uint32_t size, float x, float y,
 #ifdef PXSCENE_FONT_ATLAS
 void pxFont::renderTextToQuads(const char *text, uint32_t size, 
                         float nsx, float nsy, 
-                        pxTexturedQuads& quads) 
+                        pxTexturedQuads& quads, 
+                        float x, float y) 
 {
   quads.clear();
   if (!text || !mInitialized)
@@ -489,8 +490,10 @@ void pxFont::renderTextToQuads(const char *text, uint32_t size,
     rtLogWarn("renderText called on font before it is initialized\n");
     return;
   }
-  int x = 0;
-  int y = 0;
+  // int x = 0;
+  // int y = 0;
+  //x = 0;
+  y = 0;
 
   int i = 0;
   u_int32_t codePoint;
