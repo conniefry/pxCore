@@ -209,13 +209,13 @@ rtError pxTextBox::setFont(rtObjectRef o)
 void pxTextBox::draw() 
 {
 #if PXSCENE_FONT_ATLAS
-  if (mDirty)
-  {
+  //if (mDirty)
+  //{
     rtLogError("!CLF: mDirty\n");
     renderText(true);
-    mDirty = false;
+    //mDirty = false;
   
-  }
+  //}
   //else 
   //{
     // rtLogError("!CLF: NOT mDirty");
@@ -264,7 +264,7 @@ void pxTextBox::update(double t)
 
     setNeedsRecalc(false);
 #if PXSCENE_FONT_ATLAS
-    mQuads.clear();
+    //mQuads.clear();
 #endif
     mDirty = true;
     mScene->mDirty = true;
@@ -950,7 +950,10 @@ void pxTextBox::renderOneLine(const char * tempStr, float tempX, float tempY, fl
   {
  #if PXSCENE_FONT_ATLAS
      getFontResource()->renderTextToQuads(tempStr, size, sx, sy, mQuads, xPos, tempY);
-     mQuads.draw(xPos, tempY,mTextColor);
+      if(!clip() && mTruncation == pxConstantsTruncation::NONE)
+        mQuads.draw(noClipX,noClipY,mTextColor);
+      else
+        mQuads.draw(0, 0,mTextColor);
  #else
    getFontResource()->renderText(tempStr, size, xPos, tempY, sx, sy, mTextColor,lineWidth);
 #endif
@@ -1211,7 +1214,10 @@ void pxTextBox::renderTextRowWithTruncation(rtString & accString, float lineWidt
         if( render && getFontResource() != NULL) {
 #if PXSCENE_FONT_ATLAS
           getFontResource()->renderTextToQuads(tempStr, pixelSize, sx, sy, mQuads, xPos, tempY);
-          mQuads.draw(xPos, tempY,mTextColor);
+          if(!clip() && mTruncation == pxConstantsTruncation::NONE)
+        mQuads.draw(noClipX,noClipY,mTextColor);
+      else
+        mQuads.draw(0, 0,mTextColor);
 #else
           getFontResource()->renderText(tempStr, pixelSize, xPos, tempY, 1.0, 1.0, mTextColor,lineWidth);
 #endif       
@@ -1222,7 +1228,10 @@ void pxTextBox::renderTextRowWithTruncation(rtString & accString, float lineWidt
           if( render && getFontResource() != NULL) {
 #if PXSCENE_FONT_ATLAS
             getFontResource()->renderTextToQuads(ELLIPSIS_STR, pixelSize, sx, sy, mQuads, xPos+charW, tempY);
-            mQuads.draw(xPos+charW, tempY,mTextColor);
+            if(!clip() && mTruncation == pxConstantsTruncation::NONE)
+        mQuads.draw(noClipX,noClipY,mTextColor);
+      else
+        mQuads.draw(0, 0,mTextColor);
 #else
             getFontResource()->renderText(ELLIPSIS_STR, pixelSize, xPos+charW, tempY, 1.0, 1.0, mTextColor,lineWidth);
 #endif          
@@ -1274,8 +1283,11 @@ void pxTextBox::renderTextRowWithTruncation(rtString & accString, float lineWidt
           if( render && getFontResource() != NULL)
           {
 #if PXSCENE_FONT_ATLAS
-            getFontResource()->renderTextToQuads(tempStr, pixelSize, sx, sy, mQuads, xPos+charW, tempY);
-            mQuads.draw(xPos+charW, tempY,mTextColor);
+            getFontResource()->renderTextToQuads(tempStr, pixelSize, sx, sy, mQuads, xPos, tempY);
+            if(!clip() && mTruncation == pxConstantsTruncation::NONE)
+        mQuads.draw(noClipX,noClipY,mTextColor);
+      else
+        mQuads.draw(0, 0,mTextColor);
 #else
             getFontResource()->renderText(tempStr, pixelSize, xPos, tempY, 1.0, 1.0, mTextColor,lineWidth);
 #endif          
@@ -1287,7 +1299,10 @@ void pxTextBox::renderTextRowWithTruncation(rtString & accString, float lineWidt
           if( render && getFontResource() != NULL) {
 #if PXSCENE_FONT_ATLAS
             getFontResource()->renderTextToQuads(ELLIPSIS_STR, pixelSize, sx, sy, mQuads, xPos+charW, tempY);
-            mQuads.draw(xPos+charW, tempY,mTextColor);
+            if(!clip() && mTruncation == pxConstantsTruncation::NONE)
+        mQuads.draw(noClipX,noClipY,mTextColor);
+      else
+        mQuads.draw(0, 0,mTextColor);
 #else
             getFontResource()->renderText(ELLIPSIS_STR, pixelSize, xPos+charW, tempY, 1.0, 1.0, mTextColor,lineWidth);
 #endif         
