@@ -138,7 +138,9 @@ void pxTextBox::recalc()
 //    clearMeasurements();
     renderText(false);
 
+    //mDirty = true;
     setNeedsRecalc(false);
+    mDirty = true;
   }
 }
 void pxTextBox::setNeedsRecalc(bool recalc)
@@ -209,25 +211,23 @@ rtError pxTextBox::setFont(rtObjectRef o)
 void pxTextBox::draw() 
 {
 #if PXSCENE_FONT_ATLAS
-  //if (mDirty)
-  //{
+  if (mDirty)
+  {
     rtLogError("!CLF: mDirty\n");
+    mQuadsVector.clear();
     renderText(true);
-    //mDirty = false;
+    mDirty = false;   
   
-  //}
-  //else 
-  //{
-    // rtLogError("!CLF: NOT mDirty");
-    // if(!clip() && mTruncation == pxConstantsTruncation::NONE)
-    // {
-    //   mQuads.draw(noClipX,noClipY,mTextColor);
-    // }
-    // else 
-    // {
-    //   mQuads.draw(0,0,mTextColor);
-    // }
-  //}
+  }
+  float x = 0, y = 0;
+  if(!clip() && mTruncation == pxConstantsTruncation::NONE) {
+    x = noClipX;
+    y = noClipY;
+  }
+
+  for (std::vector<pxTexturedQuads>::iterator it = mQuadsVector.begin() ; it != mQuadsVector.end(); ++it)
+    (*it).draw(x, y, mTextColor);
+
 
 #else
   static pxTextureRef nullMaskRef;
@@ -254,23 +254,27 @@ void pxTextBox::draw()
 }
 void pxTextBox::update(double t)
 {
-  //rtLogDebug("pxTextBox::update: mNeedsRecalc=%d\n",mNeedsRecalc);
-  if( mNeedsRecalc ) {
-    //rtLogDebug("pxTextBox::update: mNeedsRecalc=%d\n",mNeedsRecalc);
-    
-    //rtLogInfo("pxTextBox::update()  mAlignVertical=%d && mAlignHorizontal=%d\n",mAlignVertical, mAlignHorizontal);
-
-    recalc();
-
-    setNeedsRecalc(false);
-#if PXSCENE_FONT_ATLAS
-    //mQuads.clear();
-#endif
-    mDirty = true;
-    mScene->mDirty = true;
-  }
-
   pxText::update(t);
+
+  //rtLogDebug("pxTextBox::update: mNeedsRecalc=%d\n",mNeedsRecalc);
+   if( mNeedsRecalc ) {
+  //   //rtLogDebug("pxTextBox::update: mNeedsRecalc=%d\n",mNeedsRecalc);
+    
+  //   //rtLogInfo("pxTextBox::update()  mAlignVertical=%d && mAlignHorizontal=%d\n",mAlignVertical, mAlignHorizontal);
+#ifdef PXSCENE_FONT_ATLAS
+     mQuadsVector.clear();
+#endif
+     recalc();
+
+     //setNeedsRecalc(false);
+     //mDirty = true;
+     mScene->mDirty = true;
+   }
+  
+
+  //pxText::update(t);
+
+
 }
 /** This function needs to measure the text, taking into consideration
  *  wrapping, truncation and dimensions; but it should not render the
@@ -949,11 +953,13 @@ void pxTextBox::renderOneLine(const char * tempStr, float tempX, float tempY, fl
   if( render && getFontResource() != NULL)
   {
  #if PXSCENE_FONT_ATLAS
-     getFontResource()->renderTextToQuads(tempStr, size, sx, sy, mQuads, xPos, tempY);
-      if(!clip() && mTruncation == pxConstantsTruncation::NONE)
-        mQuads.draw(noClipX,noClipY,mTextColor);
-      else
-        mQuads.draw(0, 0,mTextColor);
+     pxTexturedQuads quads;
+     getFontResource()->renderTextToQuads(tempStr, size, sx, sy, quads, xPos, tempY);
+     mQuadsVector.push_back(quads);
+      // if(!clip() && mTruncation == pxConstantsTruncation::NONE)
+      //   mQuads.draw(noClipX,noClipY,mTextColor);
+      // else
+      //   mQuads.draw(0, 0,mTextColor);
  #else
    getFontResource()->renderText(tempStr, size, xPos, tempY, sx, sy, mTextColor,lineWidth);
 #endif
@@ -1213,11 +1219,13 @@ void pxTextBox::renderTextRowWithTruncation(rtString & accString, float lineWidt
 
         if( render && getFontResource() != NULL) {
 #if PXSCENE_FONT_ATLAS
-          getFontResource()->renderTextToQuads(tempStr, pixelSize, sx, sy, mQuads, xPos, tempY);
-          if(!clip() && mTruncation == pxConstantsTruncation::NONE)
-        mQuads.draw(noClipX,noClipY,mTextColor);
-      else
-        mQuads.draw(0, 0,mTextColor);
+          pxTexturedQuads quads;
+          getFontResource()->renderTextToQuads(tempStr, pixelSize, sx, sy, quads, xPos, tempY);
+          mQuadsVector.push_back(quads);
+      //     if(!clip() && mTruncation == pxConstantsTruncation::NONE)
+      //   mQuads.draw(noClipX,noClipY,mTextColor);
+      // else
+      //   mQuads.draw(0, 0,mTextColor);
 #else
           getFontResource()->renderText(tempStr, pixelSize, xPos, tempY, 1.0, 1.0, mTextColor,lineWidth);
 #endif       
@@ -1227,11 +1235,13 @@ void pxTextBox::renderTextRowWithTruncation(rtString & accString, float lineWidt
           //rtLogDebug("rendering truncated text with ellipsis\n");
           if( render && getFontResource() != NULL) {
 #if PXSCENE_FONT_ATLAS
-            getFontResource()->renderTextToQuads(ELLIPSIS_STR, pixelSize, sx, sy, mQuads, xPos+charW, tempY);
-            if(!clip() && mTruncation == pxConstantsTruncation::NONE)
-        mQuads.draw(noClipX,noClipY,mTextColor);
-      else
-        mQuads.draw(0, 0,mTextColor);
+            pxTexturedQuads quads;  
+            getFontResource()->renderTextToQuads(ELLIPSIS_STR, pixelSize, sx, sy, quads, xPos+charW, tempY);
+            mQuadsVector.push_back(quads);
+      //       if(!clip() && mTruncation == pxConstantsTruncation::NONE)
+      //   mQuads.draw(noClipX,noClipY,mTextColor);
+      // else
+      //   mQuads.draw(0, 0,mTextColor);
 #else
             getFontResource()->renderText(ELLIPSIS_STR, pixelSize, xPos+charW, tempY, 1.0, 1.0, mTextColor,lineWidth);
 #endif          
@@ -1283,11 +1293,13 @@ void pxTextBox::renderTextRowWithTruncation(rtString & accString, float lineWidt
           if( render && getFontResource() != NULL)
           {
 #if PXSCENE_FONT_ATLAS
-            getFontResource()->renderTextToQuads(tempStr, pixelSize, sx, sy, mQuads, xPos, tempY);
-            if(!clip() && mTruncation == pxConstantsTruncation::NONE)
-        mQuads.draw(noClipX,noClipY,mTextColor);
-      else
-        mQuads.draw(0, 0,mTextColor);
+            pxTexturedQuads quads;
+            getFontResource()->renderTextToQuads(tempStr, pixelSize, sx, sy, quads, xPos, tempY);
+            mQuadsVector.push_back(quads);
+      //       if(!clip() && mTruncation == pxConstantsTruncation::NONE)
+      //   mQuads.draw(noClipX,noClipY,mTextColor);
+      // else
+      //   mQuads.draw(0, 0,mTextColor);
 #else
             getFontResource()->renderText(tempStr, pixelSize, xPos, tempY, 1.0, 1.0, mTextColor,lineWidth);
 #endif          
@@ -1298,11 +1310,13 @@ void pxTextBox::renderTextRowWithTruncation(rtString & accString, float lineWidt
           //rtLogDebug("rendering  text on word boundary with ellipsis\n");
           if( render && getFontResource() != NULL) {
 #if PXSCENE_FONT_ATLAS
-            getFontResource()->renderTextToQuads(ELLIPSIS_STR, pixelSize, sx, sy, mQuads, xPos+charW, tempY);
-            if(!clip() && mTruncation == pxConstantsTruncation::NONE)
-        mQuads.draw(noClipX,noClipY,mTextColor);
-      else
-        mQuads.draw(0, 0,mTextColor);
+            pxTexturedQuads quads;
+            getFontResource()->renderTextToQuads(ELLIPSIS_STR, pixelSize, sx, sy, quads, xPos+charW, tempY);
+            mQuadsVector.push_back(quads);
+      //       if(!clip() && mTruncation == pxConstantsTruncation::NONE)
+      //   mQuads.draw(noClipX,noClipY,mTextColor);
+      // else
+      //   mQuads.draw(0, 0,mTextColor);
 #else
             getFontResource()->renderText(ELLIPSIS_STR, pixelSize, xPos+charW, tempY, 1.0, 1.0, mTextColor,lineWidth);
 #endif         

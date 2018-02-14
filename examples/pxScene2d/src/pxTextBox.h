@@ -282,7 +282,11 @@ public:
   
   bool mInitialized;
   bool mNeedsRecalc;
-  
+
+  #ifdef PXSCENE_FONT_ATLAS
+  std::vector<pxTexturedQuads> mQuadsVector;
+  #endif
+
   rtObjectRef measurements;
   uint32_t lineNumber;
   uint32_t lastLineNumber;
