@@ -487,8 +487,6 @@ void pxFont::renderTextToQuads(const char *text, uint32_t size,
   }
   // int x = 0;
   // int y = 0;
-  //x = 0;
-  //y = 0;
 
   int i = 0;
   u_int32_t codePoint;

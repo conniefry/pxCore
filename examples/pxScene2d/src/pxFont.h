@@ -276,6 +276,7 @@ public:
                         pxTexturedQuads& quads,
                         float x = 0, float y = 0);
   #endif
+
   virtual void init() {}
   bool isFontLoaded() { return mInitialized;}
    
