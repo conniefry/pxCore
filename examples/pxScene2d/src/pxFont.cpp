@@ -485,8 +485,6 @@ void pxFont::renderTextToQuads(const char *text, uint32_t size,
     rtLogWarn("renderText called on font before it is initialized\n");
     return;
   }
-  // int x = 0;
-  // int y = 0;
 
   int i = 0;
   u_int32_t codePoint;
