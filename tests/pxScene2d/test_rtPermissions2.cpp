@@ -14,33 +14,6 @@ public:
   {
   }
 
-  void test0()
-  {
-    EXPECT_TRUE (RT_OK == rtPermissions::clearBootstrapConfig());
-    EXPECT_TRUE (RT_OK == rtPermissions::loadBootstrapConfig("supportfiles/pxscenepermissions.bad.conf"));
-
-    // This bootstrap has no correct items
-    // Should default to allow everywhere
-    EXPECT_TRUE (allows("https://localhost", rtPermissions::DEFAULT, "http://1.com"));
-    EXPECT_TRUE (allows("unknown", rtPermissions::FEATURE, "http://1.com"));
-    EXPECT_TRUE (allows("unknown", rtPermissions::WAYLAND, "http://1.com"));
-    EXPECT_TRUE (allows("https://localhost", rtPermissions::DEFAULT, "http://2.com"));
-    EXPECT_TRUE (allows("unknown", rtPermissions::FEATURE, "http://2.com"));
-    EXPECT_TRUE (allows("unknown", rtPermissions::WAYLAND, "http://2.com"));
-    EXPECT_TRUE (allows("https://localhost", rtPermissions::DEFAULT, "http://3.com", false));
-    EXPECT_TRUE (allows("unknown", rtPermissions::FEATURE, "http://3.com", false));
-    EXPECT_TRUE (allows("unknown", rtPermissions::WAYLAND, "http://3.com", false));
-    EXPECT_TRUE (allows("https://localhost", rtPermissions::DEFAULT, "http://4.com", false));
-    EXPECT_TRUE (allows("unknown", rtPermissions::FEATURE, "http://4.com", false));
-    EXPECT_TRUE (allows("unknown", rtPermissions::WAYLAND, "http://4.com", false));
-    EXPECT_TRUE (allows("https://localhost", rtPermissions::DEFAULT, "http://0.com", false));
-    EXPECT_TRUE (allows("unknown", rtPermissions::FEATURE, "http://0.com", false));
-    EXPECT_TRUE (allows("unknown", rtPermissions::WAYLAND, "http://0.com", false));
-
-    // Cleanup
-    EXPECT_TRUE (RT_OK == rtPermissions::clearBootstrapConfig());
-  }
-
   void test1()
   {
     EXPECT_TRUE (RT_OK == rtPermissions::clearBootstrapConfig());
@@ -274,11 +247,11 @@ public:
   }
 
 private:
-  bool allows(const char* url, rtPermissions::Type type, const char* origin, bool isValidOrigin = true)
+  bool allows(const char* url, rtPermissions::Type type, const char* origin)
   {
-    EXPECT_EQ ((int)(isValidOrigin ? RT_OK : RT_FAIL), (int)mPermissions.setOrigin(origin));
+    EXPECT_TRUE (RT_OK == mPermissions.setOrigin(origin));
     bool allows;
-    EXPECT_EQ ((int)RT_OK, (int)mPermissions.allows(url, type, allows));
+    EXPECT_TRUE (RT_OK == mPermissions.allows(url, type, allows));
     return allows;
   }
 
@@ -287,7 +260,6 @@ private:
 
 TEST_F(rtPermissions2Test, rtPermissionsTests)
 {
-  test0();
   test1();
   test2();
 }

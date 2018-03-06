@@ -76,7 +76,11 @@ using namespace std;
 #endif
 
 #ifdef PX_SERVICE_MANAGER
+#include "smqtrtshim.h"
 #include "rtservicemanager.h"
+#include "service.h"
+#include "servicemanager.h"
+#include "applicationmanagerservice.h"
 #endif //PX_SERVICE_MANAGER
 
 #ifndef RUNINMAIN
@@ -100,6 +104,12 @@ char** g_origArgv = NULL;
 bool gDumpMemUsage = false;
 extern bool gApplicationIsClosing;
 extern int pxObjectCount;
+
+#ifdef PXSCENE_FONT_ATLAS
+#include "pxFont.h"
+extern pxFontAtlas gFontAtlas;
+#endif
+
 #ifdef HAS_LINUX_BREAKPAD
 static bool dumpCallback(const google_breakpad::MinidumpDescriptor& descriptor,
 void* context, bool succeeded) {
@@ -121,11 +131,6 @@ bool dumpCallback(const wchar_t* dump_path,
 #ifdef ENABLE_CODE_COVERAGE
 extern "C" void __gcov_flush();
 #endif
-
-#ifdef ENABLE_OPTIMUS_SUPPORT
-#include "optimus_client.h"
-#endif //ENABLE_OPTIMUS_SUPPORT
-
 class sceneWindow : public pxWindow, public pxIViewContainer
 {
 public:
@@ -268,6 +273,11 @@ protected:
     free(g_origArgv);
   #endif
 
+#ifdef PXSCENE_FONT_ATLAS
+  gFontAtlas.clearTexture();
+#endif
+    pxFontManager::clearAllFonts();
+    
     context.term();
     script.collectGarbage();
 
@@ -370,9 +380,6 @@ protected:
     if (mView)
       mView->onUpdate(pxSeconds());
     EXITSCENELOCK()
-#ifdef ENABLE_OPTIMUS_SUPPORT
-    OptimusClient::pumpRemoteObjectQueue();
-#endif //ENABLE_OPTIMUS_SUPPORT
 #ifdef RUNINMAIN
     script.pump();
 #endif
@@ -615,13 +622,12 @@ if (s && (strcmp(s,"1") == 0))
 
 #endif
 
-#ifdef ENABLE_OPTIMUS_SUPPORT
-  rtObjectRef tempObject;
-  OptimusClient::registerApi(tempObject);
-#endif //ENABLE_OPTIMUS_SUPPORT
-
 #ifdef PX_SERVICE_MANAGER
+  SMQtRtShim::installDefaultCallback();
   RtServiceManager::start();
+
+  ServiceStruct serviceStruct = { ApplicationManagerService::SERVICE_NAME, createApplicationManagerService };
+  ServiceManager::getInstance()->registerService(ApplicationManagerService::SERVICE_NAME, serviceStruct);
 
 #endif //PX_SERVICE_MANAGER
 

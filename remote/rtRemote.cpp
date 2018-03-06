@@ -6,6 +6,7 @@
 #include "rtRemoteObjectCache.h"
 #include "rtRemoteServer.h"
 #include "rtRemoteStream.h"
+#include "rtRemoteNameService.h"
 #include "rtRemoteEnvironment.h"
 #include "rtRemoteConfigBuilder.h"
 
@@ -17,6 +18,7 @@
 #include <rtLog.h>
 #include <unistd.h>
 
+static rtRemoteNameService* gNs = nullptr;
 static std::mutex gMutex;
 static rtRemoteEnvironment* gEnv = nullptr;
 
@@ -51,6 +53,20 @@ rtRemoteInit(rtRemoteEnvironment* env)
   return e;
 }
 
+rtError
+rtRemoteInitNs(rtRemoteEnvironment* env)
+{
+  rtError e = RT_OK;
+  //rtRemoteConfig::getInstance();
+  if (gNs == nullptr)
+  {
+    gNs = new rtRemoteNameService(env);
+    e = gNs->init();
+  }
+
+  return e;
+}
+
 extern rtError rtRemoteShutdownStreamSelector();
 
 rtError
@@ -78,6 +94,17 @@ rtRemoteShutdown(rtRemoteEnvironment* env, bool immediate)
   }
 
   return e;
+}
+
+rtError
+rtRemoteShutdownNs()
+{
+  if (gNs)
+  {
+    delete gNs;
+    gNs = nullptr;
+  }
+  return RT_OK;
 }
 
 rtError

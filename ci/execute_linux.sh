@@ -25,9 +25,7 @@ else
   printf "\nUSING: TRAVIS_BUILD_DIR=${TRAVIS_BUILD_DIR}\n\n"
 fi
 
-rm -rf /tmp/cache/*
-rm -rf $TRAVIS_BUILD_DIR/logs/*
-
+sudo rm -rf /tmp/cache/*
 export VALGRINDLOGS=$TRAVIS_BUILD_DIR/logs/valgrind_logs
 export PX_DUMP_MEMUSAGE=1
 export ENABLE_VALGRIND=1
@@ -46,13 +44,6 @@ printExecLogs()
   printf "\n**********************     LOG ENDS      **************************\n"
 }
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-printValgrindLogs()
-{
-  printf "\n********************** PRINTING VALGRIND LOG **************************\n"
-  grep -i "definitely" -C 50 $VALGRINDLOGS
-  printf "\n**********************     LOG ENDS      **************************\n"
-}
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # Start testRunner ... 
 cd $TRAVIS_BUILD_DIR/examples/pxScene2d/src
@@ -171,7 +162,7 @@ else
 	if [ "$TRAVIS_PULL_REQUEST" != "false" ]
 		then
 		errCause="Check the above logs"
-		printValgrindLogs
+		printExecLogs
 	else
 		errCause="Check the file $VALGRINDLOGS and see for definitely lost count"
 	fi

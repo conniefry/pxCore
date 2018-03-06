@@ -111,7 +111,7 @@ class jsFilesTest : public testing::Test
     {
     }
 
-    void test(const char* file, float timeout)
+    void test(char* file, float timeout)
     {
       script.collectGarbage();
       int oldpxCount = pxObjectCount;
@@ -131,7 +131,7 @@ class jsFilesTest : public testing::Test
 
 private:
 
-    void startJsFile(const char *jsfile)
+    void startJsFile(char *jsfile)
     {
       mUrl = jsfile;
       mView = new pxScriptView(mUrl,"");

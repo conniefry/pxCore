@@ -42,7 +42,7 @@ extern pxContext context;
 #define TEST_REMOTE_OBJECT_NAME "waylandClient123" //TODO - update
 
 
-pxWayland::pxWayland(bool useFbo, pxScene2d* sceneContainer)
+pxWayland::pxWayland(bool useFbo)
   :
     mRefCount(0),
     mClientMonitorThreadId(0),
@@ -70,8 +70,7 @@ pxWayland::pxWayland(bool useFbo, pxScene2d* sceneContainer)
 #ifdef ENABLE_PX_WAYLAND_RPC
     mRemoteObject(),
 #endif //ENABLE_PX_WAYLAND_RPC
-    mRemoteObjectMutex(),
-    mSceneContainer(sceneContainer)
+    mRemoteObjectMutex()
 {
   mFillColor[0]= 0.0;
   mFillColor[1]= 0.0;
@@ -92,7 +91,6 @@ pxWayland::~pxWayland()
   if ( mWCtx )
   {
      WstCompositorDestroy(mWCtx);
-     mWCtx = NULL;
      terminateClient();
   }
 }
@@ -657,7 +655,9 @@ rtError pxWayland::startRemoteObjectLocator()
     rtLogError("pxWayland failed to initialize rtRemoteInit: %d", errorCode);
     if( mUseDispatchThread )
     {
+      mRemoteObjectMutex.lock();
       mWaitingForRemoteObject = false;
+      mRemoteObjectMutex.unlock();
     }
     return errorCode;
   }
@@ -697,16 +697,6 @@ rtError pxWayland::connectToRemoteObject()
     mRemoteObject.send("init");
     mRemoteObjectMutex.lock();
     mAPI = mRemoteObject;
-    if (mSceneContainer != NULL)
-    {
-      rtLogInfo("setting the scene container");
-      rtValue value = mSceneContainer;
-      mRemoteObject.set("sceneContainer", value);
-    }
-    else
-    {
-      rtLogInfo("unable to set the scene container because it is null");
-    }
     mRemoteObjectMutex.unlock();
 
     if(mEvents)
@@ -719,7 +709,9 @@ rtError pxWayland::connectToRemoteObject()
         mEvents->isRemoteReady(false);
   }
 
+  mRemoteObjectMutex.lock();
   mWaitingForRemoteObject = false;
+  mRemoteObjectMutex.unlock();
 #endif //ENABLE_PX_WAYLAND_RPC
   return errorCode;
 }
@@ -822,15 +814,6 @@ rtError pxWayland::connectToRemoteObject(unsigned int timeout_ms)
   {
     mRemoteObject.send("init");
     mAPI = mRemoteObject;
-    if (mSceneContainer != NULL)
-    {
-      rtLogInfo("setting the scene container reference");
-      mRemoteObject.set("sceneContainer", mSceneContainer);
-    }
-    else
-    {
-      rtLogInfo("unable to set the scene container reference because it is null");
-    }
   }
   else
   {

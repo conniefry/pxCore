@@ -32,7 +32,6 @@ dumped_core=0
 
 export PX_DUMP_MEMUSAGE=1
 export RT_LOG_LEVEL=info
-export PXSCENE_PERMISSIONS_CONFIG=$TRAVIS_BUILD_DIR/examples/pxScene2d/src/pxscenepermissions.conf
 export HANDLE_SIGNALS=1
 export ENABLE_MEMLEAK_CHECK=1
 export MallocStackLogging=1
@@ -57,7 +56,7 @@ cd $TRAVIS_BUILD_DIR/examples/pxScene2d/src/pxscene.app/Contents/MacOS
 
 # Monitor testRunner ...
 count=0
-max_seconds=900
+max_seconds=1100
 
 while [ "$count" -le "$max_seconds" ]; do
 	#leaks -nocontext pxscene > $LEAKLOGS
