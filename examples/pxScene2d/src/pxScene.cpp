@@ -101,8 +101,8 @@ bool gDumpMemUsage = false;
 extern bool gApplicationIsClosing;
 extern int pxObjectCount;
 
-#ifdef PXSCENE_FONT_ATLAS
 #include "pxFont.h"
+#ifdef PXSCENE_FONT_ATLAS
 extern pxFontAtlas gFontAtlas;
 #endif
 
