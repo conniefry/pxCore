@@ -83,7 +83,7 @@ pxFontAtlas gFontAtlas;
 #endif
 
 pxFont::pxFont(rtString fontUrl, rtString proxyUrl):pxResource(),mFace(NULL),mPixelSize(0), mFontData(0), mFontDataSize(0),
-             mFontMutex()
+             mFontMutex(), mFontDataMutex(), mFontDownloadedData(NULL), mFontDownloadedDataSize(0), mFontDataUrl()
 {  
   mFontId = fontUrl;//gFontId++; 
   mUrl = fontUrl;
@@ -117,11 +117,51 @@ pxFont::~pxFont()
    
 }
 
+void pxFont::setFontData(const FT_Byte*  fontData, FT_Long size, const char* n)
+{
+  mFontDataMutex.lock();
+  mFontDataUrl = n;
+  if (mFontDownloadedData != NULL)
+  {
+    delete [] mFontDownloadedData;
+    mFontDownloadedData = NULL;
+  }
+  if (fontData == NULL)
+  {
+    mFontDownloadedData = NULL;
+    mFontDownloadedDataSize = 0;
+  }
+  else
+  {
+    mFontDownloadedData = new char[size];
+    mFontDownloadedDataSize = size;
+    memcpy(mFontDownloadedData, fontData, mFontDownloadedDataSize);
+  }
+  mFontDataMutex.unlock();
+}
+
+void pxFont::setupResource()
+{
+  if (!mInitialized)
+  {
+    mFontDataMutex.lock();
+    if (mFontDownloadedData != NULL)
+    {
+      init( (FT_Byte*)mFontDownloadedData,
+            (FT_Long)mFontDownloadedDataSize,
+            mFontDataUrl.cString());
+      delete [] mFontDownloadedData;
+      mFontDownloadedData = NULL;
+    }
+    mFontDataMutex.unlock();
+  }
+}
+
 bool pxFont::loadResourceData(rtFileDownloadRequest* fileDownloadRequest)
 {
       // Load the font data
-      init( (FT_Byte*)fileDownloadRequest->downloadedData(), 
-            (FT_Long)fileDownloadRequest->downloadedDataSize(), 
+    setFontData( (FT_Byte*)fileDownloadRequest->downloadedData(),
+            (FT_Long)fileDownloadRequest->downloadedDataSize(),
             fileDownloadRequest->fileUrl().cString());
             
       return true;
@@ -352,6 +392,8 @@ const GlyphCacheEntry* pxFont::getGlyph(uint32_t codePoint)
 void pxFont::measureTextInternal(const char* text, uint32_t size,  float sx, float sy, 
                          float& w, float& h) 
 {
+  w = 0; h = 0;
+
   // TODO ignoring sx and sy now
   sx = 1.0;
   sy = 1.0;
@@ -362,8 +404,7 @@ void pxFont::measureTextInternal(const char* text, uint32_t size,  float sx, flo
   }
 
   setPixelSize(size);
-  
-  w = 0; h = 0;
+
   if (!text) 
     return;
     
@@ -648,11 +689,14 @@ rtRef<pxFont> pxFontManager::getFont(const char* url, const char* proxy)
   if (!url || !url[0])
     url = defaultFont;
   
+  mFontMgrMutex.lock();
+
   FontMap::iterator it = mFontMap.find(url);
   if (it != mFontMap.end())
   {
     rtLogDebug("Found pxFont in map for %s\n",url);
     pFont = it->second;
+    mFontMgrMutex.unlock();
     return pFont;  
     
   }
@@ -661,6 +705,7 @@ rtRef<pxFont> pxFontManager::getFont(const char* url, const char* proxy)
     rtLogDebug("Create pxFont in map for %s\n",url);
     pFont = new pxFont(url, proxy);
     mFontMap.insert(make_pair(url, pFont));
+    mFontMgrMutex.unlock();
     pFont->loadResource();
   }
   
@@ -669,11 +714,13 @@ rtRef<pxFont> pxFontManager::getFont(const char* url, const char* proxy)
 
 void pxFontManager::removeFont(rtString fontName)
 {
+  mFontMgrMutex.lock();
   FontMap::iterator it = mFontMap.find(fontName);
   if (it != mFontMap.end())
   {  
     mFontMap.erase(it);
   }
+  mFontMgrMutex.unlock();
 }
 
 void pxFontManager::clearAllFonts()
