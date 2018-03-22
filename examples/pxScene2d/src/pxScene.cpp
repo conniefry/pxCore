@@ -85,8 +85,6 @@ vector<AsyncScriptInfo*> scriptsInfo;
 static uv_work_t nodeLoopReq;
 #endif
 
-#include "rtThreadPool.h"
-
 #include <stdlib.h>
 #include <fstream>
 
@@ -103,7 +101,13 @@ char** g_origArgv = NULL;
 bool gDumpMemUsage = false;
 extern bool gApplicationIsClosing;
 extern int pxObjectCount;
+
 #include "pxFont.h"
+
+#ifdef PXSCENE_FONT_ATLAS
+extern pxFontAtlas gFontAtlas;
+#endif
+
 #ifdef HAS_LINUX_BREAKPAD
 static bool dumpCallback(const google_breakpad::MinidumpDescriptor& descriptor,
 void* context, bool succeeded) {
@@ -247,8 +251,6 @@ protected:
       gApplicationIsClosing = true;
     
     rtLogInfo(__FUNCTION__);
-    rtThreadPool::globalInstance()->destroy();
-    
     ENTERSCENELOCK();
     if (mView)
       mView->onCloseRequest();
@@ -273,6 +275,11 @@ protected:
     free(g_origArgv);
   #endif
 
+#ifdef PXSCENE_FONT_ATLAS
+  gFontAtlas.clearTexture();
+#endif
+    pxFontManager::clearAllFonts();
+    
     context.term();
     script.collectGarbage();
 
