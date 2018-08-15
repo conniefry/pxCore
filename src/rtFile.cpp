@@ -1,6 +1,6 @@
 /*
 
- rtCore Copyright 2005-2017 John Robinson
+ pxCore Copyright 2005-2018 John Robinson
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -32,6 +32,11 @@
 
 rtData::rtData(): mData(NULL), mLength(0) {}
 rtData::~rtData() { term(); }
+
+
+rtData::rtData(rtData &d) : mData(d.data()), mLength(d.length())                   {};
+rtData::rtData(const uint8_t* data, size_t length) : mData( (uint8_t* ) data), mLength( (uint32_t) length)  {};
+
 
 rtError rtData::init(size_t length) {
   term();

@@ -1,4 +1,5 @@
-# Build Instructions for pxScene
+
+ Build Instructions for pxScene
 
 ## Supported Platforms
 >   * macOS, Windows, Linux, and Raspberry Pi
@@ -32,18 +33,12 @@
 
 >Install Xcode, CMake and quilt
 >   * Download the latest version of Xcode from https://developer.apple.com/xcode/download/
->   * Download the latest cmake from https://cmake.org/download/
->   * Install cmake and setup the following symbolic links in /usr/local/bin
-1. Install cmake and setup the following symbolic links in /usr/local/bin:
-    ~~~~
-    ln -s /Applications/CMake.app/Contents/bin/ccmake /usr/local/bin/ccmake 
-    ln -s /Applications/CMake.app/Contents/bin/cmake /usr/local/bin/cmake 
-    ln -s /Applications/CMake.app/Contents/bin/cmake-gui /usr/local/bin/cmake-gui
-    ln -s /Applications/CMake.app/Contents/bin/cpack /usr/local/bin/cpack
-    ln -s /Applications/CMake.app/Contents/bin/ctest /usr/local/bin/ctest
-    ~~~~
->   * Install quilt
+>   * Download and install the latest version of brew from https://brew.sh/
+>   * From terminal install dependencies: cmake, pkg-config, quilt, java.
 
+```bash
+    brew install cmake pkg-config quilt caskroom/cask/java
+```
 
 ## Windows Setup
 >Setup Windows 10
@@ -91,9 +86,9 @@
       ~~~~
   
     b. To use system libraries for external libs during pxscene build, install libs on the system. To build just node, duktape and breakpad with the patches necessary for pxscene, do the following.
-      ~~~~
+      
       For Mac and Linux OS.
-      ~~~~
+
       Build duktape
       ~~~~ 
       cd examples/pxScene2d/external/dukluv/
@@ -116,11 +111,11 @@
       ~~~~
       cd examples/pxScene2d/external/breakpad-chrome_55
       ./configure
-      make
-      
-      ~~~~
+      make      
+      ~~~~	
+
       For Windows
-      ~~~~
+      
       Build Duktape
       ~~~~
       cd examples/pxScene2d/external/dukluv/
@@ -145,7 +140,7 @@
       ~~~~
 
 4. Build **pxScene**
-    ~~~~
+
     On following step 3b, Specify -DPREFER_SYSTEM_LIBRARIES=ON to use system libraries rather than libraries from externals directory.
     Note :  If a dependent library is not found installed on the system, then the version in externals will be used.
     ~~~~
@@ -172,29 +167,29 @@
     On Linux
     ~~~~
     cd pxCore/examples/pxScene2d/src
-    ./pxscene.sh {path_to_javascript_file_name}.js
+    ./spark.sh {path_to_javascript_file_name}.js
     ~~~~
 
     On macOS
     ~~~~
-    cd pxCore/examples/pxScene2d/src/pxscene.app/Contents/MacOS
-    ./pxscene.sh {path_to_javascript_file_name}.js
+    cd pxCore/examples/pxScene2d/src/spark.app/Contents/MacOS
+    ./spark.sh {path_to_javascript_file_name}.js
     ~~~~
 
     On Windows
     ~~~~
     cd pxCore\temp\
     cpack .
-    cd pxCore\temp\_CPack_Packages\win32\NSIS\pxscene-setup
-    pxscene.exe {path_to_javascript_file_name}.js
+    cd pxCore\temp\_CPack_Packages\win32\NSIS\spark-setup
+    Spark.exe {path_to_javascript_file_name}.js
     ~~~~
 
 Examples:
   ~~~~
-./pxscene.sh http://www.pxscene.org/examples/px-reference/gallery/picturepile.js
-./pxscene.sh http://www.pxscene.org/examples/px-reference/gallery/gallery.js
+./spark.sh http://www.pxscene.org/examples/px-reference/gallery/picturepile.js
+./spark.sh http://www.pxscene.org/examples/px-reference/gallery/gallery.js
   ~~~~
-Running ./pxscene.sh without a parameter will load the local browser.js that will take a .js pathname relative to http://www.pxscene.org/examples/px-reference/gallery to run.  Alternatively, a fully qualified url can be used, for example:
+Running ./spark.sh without a parameter will load the local browser.js that will take a .js pathname relative to http://www.pxscene.org/examples/px-reference/gallery to run.  Alternatively, a fully qualified url can be used, for example:
   ~~~~
 http://www.pxscene.org/examples/px-reference/gallery/picturepile.js
 http://www.pxscene.org/examples/px-reference/gallery/gallery.js
@@ -239,6 +234,8 @@ file:///home/username/directory/filename.js
    ./pxscene2dtests.sh
    ~~~~
 
+## Developer CMake options
+   ENABLE_THREAD_SANITIZER - Turn on this option to enable thread sanitizer support.  The default value is OFF
 
 ## Building with rtRemote support (Linux only)
 1. Get source code

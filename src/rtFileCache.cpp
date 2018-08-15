@@ -1,6 +1,6 @@
 /*
 
- rtCore Copyright 2005-2017 John Robinson
+ pxCore Copyright 2005-2018 John Robinson
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -245,7 +245,9 @@ rtError rtFileCache::addToCache(const rtHttpCacheData& data)
   if (true != ret)
      return RT_ERROR;
   setFileSizeAndTime(filename);
-  rtLogInfo("addToCache url(%s) filename(%s) size(%ld)", url.cString(), filename.cString(), (long) mFileSizeMap[filename]);
+
+  rtLogInfo("addToCache url(%s) filename(%s) size(%ld) Cache expiration(%s)", url.cString(), filename.cString(), (long) mFileSizeMap[filename], data.expirationDate().cString());
+
   mCacheMutex.lock();
   mCurrentSize += mFileSizeMap[filename];
   int64_t size = cleanup();
@@ -422,6 +424,7 @@ bool rtFileCache::readFileHeader(rtString& filename,rtHttpCacheData& cacheData)
     return false;
   }
   cacheData.setFilePointer(fp);
+  cacheData.setFileName(filename);
   return true;
 }
 

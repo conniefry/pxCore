@@ -1,6 +1,6 @@
 /*
 
- rtCore Copyright 2005-2017 John Robinson
+ pxCore Copyright 2005-2018 John Robinson
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -20,15 +20,12 @@
 
 // TODO what is this for??
 #define XRELOG_NOCTRACE
-
+#include <curl/curl.h>
 #include "rtFileDownloader.h"
 #include "rtThreadTask.h"
 #include "rtThreadPool.h"
 #include "pxTimer.h"
 #include "rtLog.h"
-#ifdef ENABLE_ACCESS_CONTROL_CHECK
-#include "rtCORSUtils.h"
-#endif
 #include <sstream>
 #include <iostream>
 #include <thread>
@@ -48,6 +45,8 @@ const int kDownloadHandleTimerIntervalInMilliSeconds = 30 * 1000;
 std::thread* downloadHandleExpiresCheckThread = NULL;
 bool continueDownloadHandleCheck = true;
 rtMutex downloadHandleMutex;
+
+#define HTTP_DOWNLOAD_CANCELED 499
 
 struct MemoryStruct
 {
@@ -131,6 +130,8 @@ void startFileDownloadInBackground(void* data)
 }
 
 rtFileDownloader* rtFileDownloader::mInstance = NULL;
+std::vector<rtFileDownloadRequest*>* rtFileDownloader::mDownloadRequestVector = new std::vector<rtFileDownloadRequest*>();
+rtMutex* rtFileDownloader::mDownloadRequestVectorMutex = new rtMutex();
 
 
 void onDownloadHandleCheck()
@@ -147,15 +148,16 @@ void onDownloadHandleCheck()
   }
 }
 
-rtFileDownloadRequest::rtFileDownloadRequest(const char* imageUrl, void* callbackData)
+rtFileDownloadRequest::rtFileDownloadRequest(const char* imageUrl, void* callbackData, void (*callbackFunction)(rtFileDownloadRequest*))
       : mFileUrl(imageUrl), mProxyServer(),
-    mErrorString(), mHttpStatusCode(0), mCallbackFunction(NULL), mDownloadProgressCallbackFunction(NULL), mDownloadProgressUserPtr(NULL),
+    mErrorString(), mHttpStatusCode(0), mCallbackFunction(callbackFunction), mDownloadProgressCallbackFunction(NULL), mDownloadProgressUserPtr(NULL),
     mDownloadedData(0), mDownloadedDataSize(), mDownloadStatusCode(0) ,mCallbackData(callbackData),
     mCallbackFunctionMutex(), mHeaderData(0), mHeaderDataSize(0), mHeaderOnly(false), mDownloadHandleExpiresTime(-2)
 #ifdef ENABLE_HTTP_CACHE
     , mCacheEnabled(true), mIsDataInCache(false), mDeferCacheRead(false)
 #endif
     , mIsProgressMeterSwitchOff(false), mHTTPFailOnError(false), mDefaultTimeout(false)
+    , mCanceled(false), mCanceledMutex()
 {
   mAdditionalHttpHeaders.clear();
 #ifdef ENABLE_HTTP_CACHE
@@ -415,7 +417,7 @@ void rtFileDownloadRequest::setHTTPError(const char* httpError)
 {
   if(httpError != NULL)
   {
-    strncpy(mHttpErrorBuffer, httpError, CURL_ERROR_SIZE);
+    strncpy(mHttpErrorBuffer, httpError, CURL_ERROR_SIZE-1);
     mHttpErrorBuffer[CURL_ERROR_SIZE-1] = '\0';
   }
 }
@@ -435,20 +437,31 @@ bool rtFileDownloadRequest::isCurlDefaultTimeoutSet()
   return mDefaultTimeout;
 }
 
-void rtFileDownloadRequest::setOrigin(const char* origin)
+void rtFileDownloadRequest::cancelRequest()
 {
-  mOrigin = origin;
+  mCanceledMutex.lock();
+  mCanceled = true;
+  mCanceledMutex.unlock();
 }
 
-rtString rtFileDownloadRequest::origin()
+bool rtFileDownloadRequest::isCanceled()
 {
-  return mOrigin;
+  bool requestCanceled = false;
+  mCanceledMutex.lock();
+  requestCanceled = mCanceled;
+  mCanceledMutex.unlock();
+  return requestCanceled;
 }
 
 rtFileDownloader::rtFileDownloader()
     : mNumberOfCurrentDownloads(0), mDefaultCallbackFunction(NULL), mDownloadHandles(), mReuseDownloadHandles(false),
       mCaCertFile(CA_CERTIFICATE), mFileCacheMutex()
 {
+  CURLcode rv = curl_global_init(CURL_GLOBAL_ALL);
+  if (CURLE_OK != rv)
+  {
+    rtLogError("curl global init failed (error code: %d)", rv);
+  }
 #ifdef PX_REUSE_DOWNLOAD_HANDLES
   rtLogWarn("enabling curl handle reuse");
   for (int i = 0; i < kMaxDownloadHandles; i++)
@@ -515,6 +528,7 @@ bool rtFileDownloader::addToDownloadQueue(rtFileDownloadRequest* downloadRequest
     bool submitted = false;
     //todo: check the download queue before starting download
     submitted = true;
+    addFileDownloadRequest(downloadRequest);
     downloadFileInBackground(downloadRequest);
     //startNextDownloadInBackground();
     return submitted;
@@ -547,6 +561,24 @@ void rtFileDownloader::clearFileCache()
 
 void rtFileDownloader::downloadFile(rtFileDownloadRequest* downloadRequest)
 {
+  bool isRequestCanceled = downloadRequest->isCanceled();
+  if (isRequestCanceled)
+  {
+    downloadRequest->setDownloadStatusCode(HTTP_DOWNLOAD_CANCELED);
+    downloadRequest->setDownloadedData(NULL, 0);
+    downloadRequest->setDownloadStatusCode(-1);
+    downloadRequest->setErrorString("canceled request");
+    if (!downloadRequest->executeCallback(downloadRequest->downloadStatusCode()))
+    {
+      if (mDefaultCallbackFunction != NULL)
+      {
+        (*mDefaultCallbackFunction)(downloadRequest);
+      }
+    }
+    clearFileDownloadRequest(downloadRequest);
+    return;
+  }
+
 #ifdef ENABLE_HTTP_CACHE
     bool isDataInCache = false;
 #endif
@@ -598,7 +630,6 @@ void rtFileDownloader::downloadFile(rtFileDownloadRequest* downloadRequest)
         else
         {
           rtFileCache::instance()->addToCache(downloadedData);
-          rtLogInfo("Cache expiration(%s)", cachedData.expirationDate().cString());
         }
         mFileCacheMutex.unlock();
       }
@@ -619,11 +650,10 @@ void rtFileDownloader::downloadFile(rtFileDownloadRequest* downloadRequest)
       {
         mFileCacheMutex.lock();
         rtError err = rtFileCache::instance()->addToCache(cachedData);
-        mFileCacheMutex.unlock();
         if (RT_OK != err)
           rtLogWarn("Adding url to cache failed (%s)", url.cString());
-        else
-          rtLogInfo("Cache expiration(%s)", cachedData.expirationDate().cString());
+        
+        mFileCacheMutex.unlock();
       }
     }
 
@@ -633,8 +663,7 @@ void rtFileDownloader::downloadFile(rtFileDownloadRequest* downloadRequest)
       downloadRequest->setDownloadedData(NULL,0);
     }
 #endif
-
-    delete downloadRequest;
+    clearFileDownloadRequest(downloadRequest);
 }
 
 bool rtFileDownloader::downloadFromNetwork(rtFileDownloadRequest* downloadRequest)
@@ -692,15 +721,8 @@ bool rtFileDownloader::downloadFromNetwork(rtFileDownloadRequest* downloadReques
     {
       list = curl_slist_append(list, additionalHttpHeaders[headerOption].cString());
     }
-#ifdef ENABLE_ACCESS_CONTROL_CHECK
-    const rtString& origin = downloadRequest->origin();
-    if (!origin.isEmpty())
-    {
-      rtString headerOrigin("Origin:");
-      headerOrigin.append(origin.cString());
-      list = curl_slist_append(list, headerOrigin.cString());
-    }
-#endif
+    if (downloadRequest->cors() != NULL)
+      downloadRequest->cors()->updateRequestForAccessControl(&list);
     curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, list);
     //CA certificates
     // !CLF: Use system CA Cert rather than CA_CERTIFICATE fo now.  Revisit!
@@ -729,6 +751,8 @@ bool rtFileDownloader::downloadFromNetwork(rtFileDownloadRequest* downloadReques
     }
     /* get it! */
     res = curl_easy_perform(curl_handle);
+    curl_slist_free_all(list);
+
     downloadRequest->setDownloadStatusCode(res);
     if(downloadRequest->isHTTPFailOnError())
         downloadRequest->setHTTPError(errorBuffer);
@@ -773,7 +797,6 @@ bool rtFileDownloader::downloadFromNetwork(rtFileDownloadRequest* downloadReques
     {
         downloadRequest->setHttpStatusCode(httpCode);
     }
-    curl_slist_free_all(list);
     rtFileDownloader::instance()->releaseDownloadHandle(curl_handle, downloadHandleExpiresTime);
 
     //todo read the header information before closing
@@ -786,23 +809,6 @@ bool rtFileDownloader::downloadFromNetwork(rtFileDownloadRequest* downloadReques
     if (false == headerOnly)
     {
       downloadRequest->setDownloadedData(chunk.contentsBuffer, chunk.contentsSize);
-#ifdef ENABLE_ACCESS_CONTROL_CHECK
-      rtString errorStr;
-      rtString rawHeaders(downloadRequest->headerData(), downloadRequest->headerDataSize());
-      if (RT_OK != rtCORSUtilsCheckOrigin(origin, downloadRequest->fileUrl(), rawHeaders, &errorStr))
-      {
-        rtLogWarn("disallow access for origin '%s' because: %s", origin.cString(), errorStr.cString());
-
-        // Disallow access to the resource's contents.
-        if (downloadRequest->downloadedData() != NULL)
-        {
-          free(downloadRequest->downloadedData());
-        }
-        downloadRequest->setDownloadedData(NULL, 0);
-        downloadRequest->setDownloadStatusCode(-1);
-        downloadRequest->setErrorString(errorStr.cString());
-      }
-#endif
     }
     else if (chunk.contentsBuffer != NULL)
     {
@@ -811,6 +817,8 @@ bool rtFileDownloader::downloadFromNetwork(rtFileDownloadRequest* downloadReques
     }
     chunk.headerBuffer = NULL;
     chunk.contentsBuffer = NULL;
+    if (downloadRequest->cors() != NULL)
+      downloadRequest->cors()->updateResponseForAccessControl(downloadRequest);
     return true;
 }
 
@@ -915,6 +923,92 @@ void rtFileDownloader::releaseDownloadHandle(CURL* curlHandle, int expiresTime)
 #else
     curl_easy_cleanup(curlHandle);
 #endif //PX_REUSE_DOWNLOAD_HANDLES
+}
+
+void rtFileDownloader::addFileDownloadRequest(rtFileDownloadRequest* downloadRequest)
+{
+  if (downloadRequest == NULL)
+  {
+    return;
+  }
+  mDownloadRequestVectorMutex->lock();
+  bool found = false;
+  for (std::vector<rtFileDownloadRequest*>::iterator it=mDownloadRequestVector->begin(); it!=mDownloadRequestVector->end(); ++it)
+  {
+    if ((*it) == downloadRequest)
+    {
+      found = true;
+      break;
+    }
+  }
+  if (!found)
+  {
+    mDownloadRequestVector->push_back(downloadRequest);
+  }
+  mDownloadRequestVectorMutex->unlock();
+}
+
+void rtFileDownloader::clearFileDownloadRequest(rtFileDownloadRequest* downloadRequest)
+{
+  mDownloadRequestVectorMutex->lock();
+  for (std::vector<rtFileDownloadRequest*>::iterator it=mDownloadRequestVector->begin(); it!=mDownloadRequestVector->end(); ++it)
+  {
+    if ((*it) == downloadRequest)
+    {
+      mDownloadRequestVector->erase(it);
+      break;
+    }
+  }
+  if (downloadRequest != NULL)
+  {
+    delete downloadRequest;
+  }
+  mDownloadRequestVectorMutex->unlock();
+}
+
+void rtFileDownloader::setCallbackFunctionThreadSafe(rtFileDownloadRequest* downloadRequest,
+                                                     void (*callbackFunction)(rtFileDownloadRequest*), void* owner)
+{
+  mDownloadRequestVectorMutex->lock();
+  for (std::vector<rtFileDownloadRequest*>::iterator it=mDownloadRequestVector->begin(); it!=mDownloadRequestVector->end(); ++it)
+  {
+    if ((*it) == downloadRequest && (*it)->callbackData() == owner)
+    {
+      downloadRequest->setCallbackFunctionThreadSafe(callbackFunction);
+      break;
+    }
+  }
+  mDownloadRequestVectorMutex->unlock();
+}
+
+void rtFileDownloader::cancelDownloadRequestThreadSafe(rtFileDownloadRequest* downloadRequest, void* owner)
+{
+  mDownloadRequestVectorMutex->lock();
+  for (std::vector<rtFileDownloadRequest*>::iterator it=mDownloadRequestVector->begin(); it!=mDownloadRequestVector->end(); ++it)
+  {
+    if ((*it) == downloadRequest && (*it)->callbackData() == owner)
+    {
+      downloadRequest->cancelRequest();
+      break;
+    }
+  }
+  mDownloadRequestVectorMutex->unlock();
+}
+
+bool rtFileDownloader::isDownloadRequestCanceled(rtFileDownloadRequest* downloadRequest, void* owner)
+{
+  bool requestIsCanceled = false;
+  mDownloadRequestVectorMutex->lock();
+  for (std::vector<rtFileDownloadRequest*>::iterator it=mDownloadRequestVector->begin(); it!=mDownloadRequestVector->end(); ++it)
+  {
+    if ((*it) == downloadRequest && (*it)->callbackData() == owner)
+    {
+      requestIsCanceled = downloadRequest->isCanceled();
+      break;
+    }
+  }
+  mDownloadRequestVectorMutex->unlock();
+  return requestIsCanceled;
 }
 
 void rtFileDownloader::checkForExpiredHandles()

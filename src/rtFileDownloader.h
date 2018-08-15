@@ -1,6 +1,6 @@
 /*
 
- rtCore Copyright 2005-2017 John Robinson
+ pxCore Copyright 2005-2018 John Robinson
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@
 #ifdef ENABLE_HTTP_CACHE
 #include <rtFileCache.h>
 #endif
+#include "rtCORS.h"
 
 // TODO Eliminate std::string
 #include <string.h>
@@ -45,7 +46,7 @@
 class rtFileDownloadRequest
 {
 public:
-   rtFileDownloadRequest(const char* imageUrl, void* callbackData);
+   rtFileDownloadRequest(const char* imageUrl, void* callbackData, void (*callbackFunction)(rtFileDownloadRequest*) = NULL);
   ~rtFileDownloadRequest();
 
   void setFileUrl(const char* imageUrl);
@@ -95,8 +96,10 @@ public:
   char* httpErrorBuffer(void);
   void setCurlDefaultTimeout(bool val);
   bool isCurlDefaultTimeoutSet();
-  void setOrigin(const char* origin);
-  rtString origin();
+  void setCORS(const rtCORSRef& cors) { mCORS = cors; }
+  rtCORSRef cors() const { return mCORS; }
+  void cancelRequest();
+  bool isCanceled();
 
 private:
   rtString mFileUrl;
@@ -125,7 +128,9 @@ private:
   bool mHTTPFailOnError;
   char mHttpErrorBuffer[CURL_ERROR_SIZE];
   bool mDefaultTimeout;
-  rtString mOrigin;
+  rtCORSRef mCORS;
+  bool mCanceled;
+  rtMutex mCanceledMutex;
 };
 
 struct rtFileDownloadHandle
@@ -141,6 +146,9 @@ class rtFileDownloader
 public:
 
     static rtFileDownloader* instance();
+    static void setCallbackFunctionThreadSafe(rtFileDownloadRequest* downloadRequest, void (*callbackFunction)(rtFileDownloadRequest*), void* owner);
+    static void cancelDownloadRequestThreadSafe(rtFileDownloadRequest* downloadRequest, void* owner);
+    static bool isDownloadRequestCanceled(rtFileDownloadRequest* downloadRequest, void* owner);
 
     virtual bool addToDownloadQueue(rtFileDownloadRequest* downloadRequest);
     virtual void raiseDownloadPriority(rtFileDownloadRequest* downloadRequest);
@@ -165,6 +173,8 @@ private:
 #endif
     CURL* retrieveDownloadHandle();
     void releaseDownloadHandle(CURL* curlHandle, int expiresTime);
+    static void addFileDownloadRequest(rtFileDownloadRequest* downloadRequest);
+    static void clearFileDownloadRequest(rtFileDownloadRequest* downloadRequest);
     //todo: hash mPendingDownloadRequests;
     //todo: string list mPendingDownloadOrderList;
     //todo: list mActiveDownloads;
@@ -176,6 +186,8 @@ private:
     rtString mCaCertFile;
     rtMutex mFileCacheMutex;
     static rtFileDownloader* mInstance;
+    static std::vector<rtFileDownloadRequest*>* mDownloadRequestVector;
+    static rtMutex* mDownloadRequestVectorMutex;
 };
 
 #endif //RT_FILE_DOWNLOADER_H
