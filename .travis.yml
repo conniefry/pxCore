@@ -15,7 +15,7 @@ before_install:
 #  - if [ "$TRAVIS_EVENT_TYPE" != "cron" ] && {[ "$TRAVIS_EVENT_TYPE" = "push" ] || [ "$TRAVIS_EVENT_TYPE" = "pull_request" ]}; then export PATH=/usr/local/opt/ccache/libexec:$PATH; fi
 # NOTE THAT COVERITY IS COMPATIBLE WITH gcc 7; upload to coverity fails when using gcc 6 
 #  - if [ "$TRAVIS_EVENT_TYPE" != "cron" ] && [ "$TRAVIS_OS_NAME" = "linux" ]; then  export CC=/usr/bin/gcc-6; export CXX=/usr/bin/g++-6 ; sudo ln -s /usr/bin/gcc-6 /usr/local/bin/gcc ; sudo ln -s /usr/bin/g++-6 /usr/local/bin/g++ ; fi
-  - if [ "$TRAVIS_EVENT_TYPE" != "cron" ] && {[ "$TRAVIS_EVENT_TYPE" = "push" ] || [ "$TRAVIS_EVENT_TYPE" = "pull_request" ]}; then echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-; fi
+  - if [ "$TRAVIS_EVENT_TYPE" != "cron" ] && {[ "$TRAVIS_EVENT_TYPE" = "push" ] || [ "$TRAVIS_EVENT_TYPE" = "pull_request" ]}; then echo -n | openssl s_client -connect https://scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-; fi
 #  - gcc -v && g++ -v 
 
 
@@ -34,7 +34,7 @@ addons:
     notification_email: constance_fry@cable.comcast.com
     build_command_prepend: "echo build prepend"
     build_command:   "./ci/make_coverity.sh"
-    branch_pattern: coverity_scan
+    branch_pattern: coverity_scan_2
   apt:
     sources:
     - ubuntu-toolchain-r-test
@@ -46,6 +46,6 @@ env:
   global:
    # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
    #   via the "travis encrypt" command using the project repo's public key
-   - secure: "lZK26VSpJf/OI5N3J2guHKQlp7p7iMHq5tRMD6izblNXGl9QZeDiNBOES/5avxTUjCynjKb++cO+/XNYLr9Wrd3pceD4aaB/iVjIA/1vhgCkKBdXCKA6MrWrOGOVGXH1CbrOg1gmid51iBK3glaHNsfPaZt9t7qYi5IR4Xkcrn5YBoIhWlLOMt4x6htWOnWL+0jXi3k+RTJPomm9OoxLMRPWQ/Gr+6VgzoTJGyfF5ZixhkKbsonO4FK3nrlem7QXLUQYF7yDPZ7KZbMr9h43Zll77IOhoEV7PHDVN1Lz2IHNg4kDfbEH79Tsk43mWZH7MHx2rvKbS0Rg2jHkHZInulm3qLhckJkd93Ct9SfkO4wlpOI93kzZ6ENdm6XzF4c0/cM9M9Uhn+COMpe/S2xsvSbWGtC2r3itjQSAu3mkfYtKnpJkQI32+By/vNKCKMQgleoWqx2w8pVdIneIvoHYr5fQbKA1Tfqbzexd4pO2408z8W3OdSrmztpLPOR15KNN7lM91qAZgDIRP714j0BZG0nXDo2u9JDLLAZrqFioiPaFIFlmEFJ422Z42N8oZoUh/Bl8U/SF1mNgnaPlb7e5tI2fAwrR6+tR2zrcb8NBDuXgqYqzPdLCnVHIX/cHdwvJ0176q/qdPQptNwEaQBGgm8pFSth4AFSGGjKDo5C4TCA="
+   - secure: A0VqzRLi/O7t/IpigCJO7mPHU4MXDdhsJMTSJjg3J4iP8putiYP35ky7vBykutbTFYoYoC/EBf1eyBhB+Mc8UHB95qRmIQw/zldLnBHKDWFB6vv1Hfbon8/zkB01NpDo+WdCnKNkjBcku0BfL/eUs6opCiDOn9qXBShR+0cR11qxgpZm+PNlIUygGYbcxRzWQqEvEycj0wTCFedFXJUvuLFN1Zm/SaVUdG+SRKty0PGTJSM+jc1olieuv6gyuqQZsty5pmCJsYW/B98Ux8F62itlY3jrVh0iCU4C3w1V6/oisJRuM1ugTklDioWP39woQNZNNMP8l2SMc275v/gBK+z3SYmZH02N2l9i2JxC/XJNddaR1R9/TGJ0yTVxbxtwWL9C+v7C4Lei11u3qnVeABBC58HVZSHW83f0QCfZVmcNMK1Xd7sJvzrm45UiHLyFj0OsK/5zVywcWykiB2w2P57oItu6sVhHE1Lb8bwVIdsm4gg8p6KMairq0Hl8zgHb7e7YLSZyXtFotEKBk8Ac8vK6u4kLaDJlovzRfPgy/n4nMT6P0UT/AOONav4fVrDYV776ugKGBgZGqyNPpBzq+9Jmmk7VgaHg7QNH+wMXlu/g2jvbQiLGIx9fXQ1DJecEXuvsf2t7bexSRx3r3r7jJ16vk4YbXeLSvxhGF8p/NII="
 
 
