@@ -29,26 +29,23 @@ script:
 addons:
   coverity_scan:
     project:
-      name: "pxscene/pxCore"
+      name: "conniefry/pxCore"
       description: "Build submitted via Travis CI"
     notification_email: constance_fry@cable.comcast.com
     build_command_prepend: "echo build prepend"
     build_command:   "./ci/make_coverity.sh"
     branch_pattern: coverity_scan
-#  apt:
-#    sources:
-#    - ubuntu-toolchain-r-test
-#    packages:
-#    - gcc-6
-#    - g++-6
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - gcc-6
+    - g++-6
 
 env:
   global:
    # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
    #   via the "travis encrypt" command using the project repo's public key
-   - secure: "nl5ZQRmc9g+nmv5zimVG3H39sqiwYSJWxlOni9sOeFSxs547SV/JVIHvlSjk3WH6bzqngjskWmtHeS9POsn/NNqj0QTc66tXQagrZod8EIpEWv3eDqBVURHATPlgXaNnuJB+xVcfaOvuEbpPhlXhJo3IBpUGH6mCx8eG+lT9O1vBRHYo4PFtLczBFH4JEBn+jGcgvomZy59x+c2iowXsQx6EZDPR3mLRFuGgvQjpZ/WioXzhYfSk8uJUnZElw0fiPbaAteWSwzRswD975CxA2+MOr12Re0CC9qUYcYr11hhtm4YiLzy+G0BJj3qF9mUnRxHOj45i8N/4crjhOPehgSgAH334JH3SuqdXgFigV3nWseeX89HICaRvzhnaOf5qs/ZMloa7aUqVBYwRpJB3ONXs0jgNqR32pW6zi2GvfV2zYEhkBJ/p5MesWZSOPHM8mi2qCpSAoyUIB2Vti0iKoyR5F6K11maElikrKSC9o6zxcD+CWeRi5eHFOgLIHU9M23rcPBIAmV1lvG7zHgMCrpyknvc8XU/bi1knymLMu/T0xfVTxI34/eavqsetWo2KBe182fJy+0LWldQLUYd9pLN+tvEaaI1ecL+HDOKyL+rDFmzNCw9nv5q995+7VqK1edqzPeDIuuhv17AZrrd1FY2Kg9O6RmabboVuG7Agsjg="
+   - secure: "lZK26VSpJf/OI5N3J2guHKQlp7p7iMHq5tRMD6izblNXGl9QZeDiNBOES/5avxTUjCynjKb++cO+/XNYLr9Wrd3pceD4aaB/iVjIA/1vhgCkKBdXCKA6MrWrOGOVGXH1CbrOg1gmid51iBK3glaHNsfPaZt9t7qYi5IR4Xkcrn5YBoIhWlLOMt4x6htWOnWL+0jXi3k+RTJPomm9OoxLMRPWQ/Gr+6VgzoTJGyfF5ZixhkKbsonO4FK3nrlem7QXLUQYF7yDPZ7KZbMr9h43Zll77IOhoEV7PHDVN1Lz2IHNg4kDfbEH79Tsk43mWZH7MHx2rvKbS0Rg2jHkHZInulm3qLhckJkd93Ct9SfkO4wlpOI93kzZ6ENdm6XzF4c0/cM9M9Uhn+COMpe/S2xsvSbWGtC2r3itjQSAu3mkfYtKnpJkQI32+By/vNKCKMQgleoWqx2w8pVdIneIvoHYr5fQbKA1Tfqbzexd4pO2408z8W3OdSrmztpLPOR15KNN7lM91qAZgDIRP714j0BZG0nXDo2u9JDLLAZrqFioiPaFIFlmEFJ422Z42N8oZoUh/Bl8U/SF1mNgnaPlb7e5tI2fAwrR6+tR2zrcb8NBDuXgqYqzPdLCnVHIX/cHdwvJ0176q/qdPQptNwEaQBGgm8pFSth4AFSGGjKDo5C4TCA="
 
-notifications:
-  slack:
-    secure: gQ7GjheuN4j98co71p1gO0QaIAX3xHnDE2JRTT5UopsPbhczBC3A6RlVhXBrIc9mDyt2AO/pTBOl68BGtwtb4NVhZo2fqCcoq4wk2U2bAH3OnQu5KE9fJxm1KdJi0WiFVy1pURQql1fUH800YqF1LOWbc9m8aexgcvtD6ghDFLCDStgqfNgRzSEbZ8YBP98FjkEHj/jjeqwdUaH0Aezv0n82Laev99KDveCTVMoKXcbyfBQK0ty3OFAg6nBrMWPx0RVDVOVFPjjXDFgC5UfS9FLA57bxRDVmDr8SMnS/7m26YH0jnqY4oS1QnEmrdUtp6UWNex8D88KCt+wXoOpd6Ca1DVHNnaFuotEVpJ8B3WEG3uiK6xvacpkMrtEuoswUIbOv8E1VdfF3eOSmSAneb09Nbs15U8yiBfNq4PLE8TYc22or5jDsksTyGgmOgE1m8teH4DQz+k5qhMihd9f88CqaWzkjNgucavr/QzXG16xt13unMmMD0/bzA7wDU3hprne5hycR0LDxFRlL5z5xdv4w9yseuFTYBRcQ5Lk9zA6gJUMCGcbCtfA2rYQS7lOul575EMX7SfagHMmn663QY3tzm+vsxF93Dib+xfsAI3xSxSKGeBNZ5H9MxUPNUcu1yxhDZIZX8HujsDVLfIm/VK9OS2ultBTYeKizlyPBBsM=
-cache: ccache
+
