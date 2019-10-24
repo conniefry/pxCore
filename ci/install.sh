@@ -17,7 +17,7 @@ checkError()
 
 if [ "$TRAVIS_OS_NAME" = "linux" ]
 then
-    if [ "$TRAVIS_EVENT_TYPE" = "cron" ] || ([ "$TRAVIS_EVENT_TYPE" = "api" ] && [ "$TRAVIS_BRANCH" != "coverity_scan" ])
+    if [ "$TRAVIS_EVENT_TYPE" = "cron" ] || ([ "$TRAVIS_EVENT_TYPE" = "api" ] && [ "$TRAVIS_BRANCH" != "coverity_scan_2 " ])
 
     then
       echo "Ignoring install stage for $TRAVIS_EVENT_TYPE event";
