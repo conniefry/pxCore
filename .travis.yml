@@ -32,15 +32,15 @@ addons:
       name: "conniefry/pxCore"
       description: "Build submitted via Travis CI"
     notification_email: constance_fry@cable.comcast.com
-    build_command_prepend: "./ci/config_coverity.sh"
+    build_command_prepend: "echo build prepend"
     build_command:   "./ci/make_coverity.sh"
     branch_pattern: coverity_scan_2
-#  apt:
-#    sources:
-#    - ubuntu-toolchain-r-test
-#    packages:
-#    - gcc-6
-#    - g++-6
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - gcc-6
+    - g++-6
 
 env:
   global:
